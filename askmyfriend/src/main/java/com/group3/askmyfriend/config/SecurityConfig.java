@@ -51,12 +51,13 @@ public class SecurityConfig {
                         new AntPathRequestMatcher("/css/**"),
                         new AntPathRequestMatcher("/js/**"),
                         new AntPathRequestMatcher("/images/**"),
-                        new AntPathRequestMatcher("/error/**")
+                        new AntPathRequestMatcher("/error/**"),
+                        new AntPathRequestMatcher("/ws-chat/**")  // WebSocket 경로 추가
                 ).permitAll()
                 .anyRequest().authenticated()
         ).formLogin(form -> form
                 .loginPage("/auth/login")
-                .defaultSuccessUrl("/index", true) // ✅ 수정된 부분
+                .defaultSuccessUrl("/index", true)
                 .failureHandler(customAuthFailureHandler)
                 .failureUrl("/auth/login?error=true")
                 .usernameParameter("loginId")
