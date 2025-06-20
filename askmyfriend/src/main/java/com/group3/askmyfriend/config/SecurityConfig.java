@@ -3,6 +3,8 @@ package com.group3.askmyfriend.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -13,13 +15,11 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import com.group3.askmyfriend.service.CustomUserDetailsService;
 
-// 스프링 시큐리티 설정 클래스
 @Configuration
+@Order(2) // ★ 사용자용 보안 설정은 두 번째로 적용
 public class SecurityConfig {
 
-    // userDetailsService 사용 추가
     private final CustomUserDetailsService userDetailsService;
-    // 로그인 실패 핸들러 의존성 주입
     private final AuthenticationFailureHandler customAuthFailureHandler;
 
     @Autowired
@@ -34,16 +34,29 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // 스프링 시큐리티의 보안 필터 체인
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public DaoAuthenticationProvider userAuthenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+    @Bean
+    public SecurityFilterChain userSecurityFilterChain(HttpSecurity http) throws Exception {
+        http.securityMatcher("/**"); // ✅ 사용자 요청은 전부 여기로
+
         http.sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .sessionFixation()
-                .migrateSession()
-                .maximumSessions(1)
-                .expiredUrl("/auth/login?expired")
-        ).authorizeHttpRequests(auth -> auth
+                .sessionFixation().migrateSession()
+                .maximumSessions(1).expiredUrl("/auth/login?expired")
+        );
+
+        http.csrf(AbstractHttpConfigurer::disable);
+
+        http.authenticationProvider(userAuthenticationProvider());
+
+        http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                         new AntPathRequestMatcher("/"),
                         new AntPathRequestMatcher("/auth/login"),
@@ -54,19 +67,22 @@ public class SecurityConfig {
                         new AntPathRequestMatcher("/error/**")
                 ).permitAll()
                 .anyRequest().authenticated()
-        ).formLogin(form -> form
+        );
+
+        http.formLogin(form -> form
                 .loginPage("/auth/login")
-                .defaultSuccessUrl("/index", true) // ✅ 수정된 부분
+                .loginProcessingUrl("/auth/loginProc")
+                .defaultSuccessUrl("/index", true)
                 .failureHandler(customAuthFailureHandler)
                 .failureUrl("/auth/login?error=true")
                 .usernameParameter("loginId")
                 .passwordParameter("password")
-                .loginProcessingUrl("/auth/loginProc")
+        );
 
-        ).logout(logout -> logout
+        http.logout(logout -> logout
                 .logoutSuccessUrl("/auth/login")
                 .invalidateHttpSession(true)
-        ).csrf(AbstractHttpConfigurer::disable);
+        );
 
         return http.build();
     }
