@@ -54,4 +54,7 @@ public class UserEntity {
     protected void onUpdate() {
         this.modifiedDate = LocalDateTime.now();
     }
+    @Transient
+    private String role = "USER";  // DB에 저장되지 않지만 화면에서는 기본값 사용
+
 }

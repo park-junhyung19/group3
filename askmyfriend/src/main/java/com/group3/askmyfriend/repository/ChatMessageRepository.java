@@ -28,4 +28,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
     Long countUnreadMessages(@Param("roomId") Long roomId, 
                             @Param("lastReadAt") LocalDateTime lastReadAt, 
                             @Param("userId") Long userId);
+    //박준형 채팅 로그 메시지 보기 추가
+    List<ChatMessageEntity> findAllByIsDeletedFalseOrderBySentAtDesc();
+
 }

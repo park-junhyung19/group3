@@ -66,4 +66,49 @@ public class UserService {
     public Optional<UserEntity> findByLoginId(String loginId) {
         return userRepository.findByLoginId(loginId);
     }
+
+    @Transactional
+    public void updateEmail(Long userId, String newEmail) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
+        user.setEmail(newEmail);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword, String confirmPassword) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 올바르지 않습니다.");
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            throw new IllegalArgumentException("새 비밀번호가 일치하지 않습니다.");
+        }
+
+        if (newPassword.length() < 8) {
+            throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void updatePhone(Long userId, String newPhone) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
+        user.setPhone(newPhone);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void updateStatus(Long userId, String status) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+        user.setStatus(status);
+        userRepository.save(user);
+    }
 }

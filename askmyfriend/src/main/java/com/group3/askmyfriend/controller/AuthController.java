@@ -5,10 +5,13 @@ import com.group3.askmyfriend.dto.SignupDTO;
 import com.group3.askmyfriend.service.AuthService;
 import com.group3.askmyfriend.service.UserService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -50,16 +53,28 @@ public class AuthController {
         }
     }
 
-    // 로그인 화면
+    // ✅ 로그인 화면 + 실패 메시지 처리
     @GetMapping("/login")
-    public String loginForm() {
+    public String loginForm(@RequestParam(value = "error", required = false) String error,
+                            HttpServletRequest request,
+                            Model model) {
+        if (error != null) {
+            Exception ex = (Exception) request.getSession()
+                    .getAttribute("SPRING_SECURITY_LAST_EXCEPTION");
+
+            if (ex != null) {
+                model.addAttribute("errorMessage", ex.getMessage());
+            } else {
+                model.addAttribute("errorMessage", "로그인에 실패했습니다.");
+            }
+        }
         return "login";
     }
 
     // 이메일 인증 화면
     @GetMapping("/email-verify")
     public String showEmailVerifyPage() {
-        return "email-verify"; // templates/email-verify.html
+        return "email-verify";
     }
 
     // 인증번호 전송
@@ -70,7 +85,7 @@ public class AuthController {
         return ResponseEntity.ok("인증번호가 전송되었습니다.");
     }
 
-    // 인증번호 확인 및 세션 저장
+    // 인증번호 확인
     @PostMapping("/verify-code")
     @ResponseBody
     public ResponseEntity<Boolean> verifyCode(@RequestParam String email,
@@ -78,7 +93,7 @@ public class AuthController {
                                               HttpSession session) {
         boolean isValid = authService.verifyCode(email, code);
         if (isValid) {
-            session.setAttribute("verifiedEmail", email); // 세션에 저장
+            session.setAttribute("verifiedEmail", email);
         }
         return ResponseEntity.ok(isValid);
     }
@@ -90,11 +105,11 @@ public class AuthController {
                                         Model model) {
         String verifiedEmail = (String) session.getAttribute("verifiedEmail");
         if (verifiedEmail == null || !verifiedEmail.equals(email)) {
-            return "redirect:/auth/login"; // 인증되지 않은 접근 차단
+            return "redirect:/auth/login";
         }
 
         model.addAttribute("email", email);
-        return "reset_password"; // templates/reset_password.html
+        return "reset_password";
     }
 
     // 비밀번호 재설정 처리
@@ -105,16 +120,17 @@ public class AuthController {
                                 Model model) {
         try {
             userService.updatePassword(email, newPassword);
-            session.removeAttribute("verifiedEmail"); // 인증정보 초기화
+            session.removeAttribute("verifiedEmail");
             return "redirect:/auth/login?resetSuccess";
         } catch (Exception e) {
             model.addAttribute("error", "비밀번호 변경 실패: " + e.getMessage());
             return "reset_password";
         }
     }
+
+    // 비밀번호 찾기 - 이메일 인증 진입
     @GetMapping("/find-password")
     public String redirectToEmailVerifyPage() {
-        return "email-verify"; // 파일명과 정확히 일치해야 함
+        return "email-verify";
     }
-
 }

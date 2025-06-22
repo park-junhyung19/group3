@@ -193,7 +193,10 @@
                 const result = await res.json();
                 if (result === true) {
                     alert("✅ 인증 성공! 비밀번호 재설정 화면으로 이동합니다.");
-                    window.location.href = `/auth/reset-password?email=${encodeURIComponent(email)}`;
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirect = urlParams.get('redirect') || '/auth/reset-password';
+
+                    window.location.href = `${redirect}?email=${encodeURIComponent(email)}`;
                 } else {
                     alert("❌ 인증 실패. 인증번호를 다시 확인해 주세요.");
                 }

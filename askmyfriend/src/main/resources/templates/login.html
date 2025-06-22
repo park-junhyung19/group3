@@ -148,10 +148,10 @@
     <button type="submit" class="button button-primary">로그인</button>
 </form>
 	
-	    <!-- 로그인 실패 메시지 -->
-	    <div th:if="${param.error}">
-	        <p style="color:red;">아이디 또는 비밀번호가 올바르지 않습니다.</p>
-	    </div>
+	   <!-- 로그인 실패 메시지 -->
+<div th:if="${param.errorMessage}">
+    <p style="color:red;" th:text="${param.errorMessage}"></p>
+</div>
 	
 	    <!-- 로그아웃 메시지 -->
 	    <div th:if="${param.logout}">

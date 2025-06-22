@@ -44,7 +44,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain userSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/**"); // ✅ 사용자 요청은 전부 여기로
+        http.securityMatcher("/**"); // ✅ 모든 사용자 요청 적용
 
         http.sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -61,6 +61,10 @@ public class SecurityConfig {
                         new AntPathRequestMatcher("/"),
                         new AntPathRequestMatcher("/auth/login"),
                         new AntPathRequestMatcher("/auth/signup"),
+                        new AntPathRequestMatcher("/auth/find-password"),
+                        new AntPathRequestMatcher("/auth/send-code"),
+                        new AntPathRequestMatcher("/auth/verify-code"),
+                        new AntPathRequestMatcher("/auth/reset-password"),
                         new AntPathRequestMatcher("/css/**"),
                         new AntPathRequestMatcher("/js/**"),
                         new AntPathRequestMatcher("/images/**"),
@@ -72,16 +76,17 @@ public class SecurityConfig {
         http.formLogin(form -> form
                 .loginPage("/auth/login")
                 .loginProcessingUrl("/auth/loginProc")
-                .defaultSuccessUrl("/index", true)
-                .failureHandler(customAuthFailureHandler)
-                .failureUrl("/auth/login?error=true")
                 .usernameParameter("loginId")
                 .passwordParameter("password")
+                .defaultSuccessUrl("/index", true)
+                .failureHandler(customAuthFailureHandler) // ✅ 커스텀 핸들러만 사용
         );
 
         http.logout(logout -> logout
+                .logoutUrl("/logout")
                 .logoutSuccessUrl("/auth/login")
                 .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
         );
 
         return http.build();
