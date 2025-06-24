@@ -32,6 +32,15 @@ public class ChatMessageEntity {
     @Column(name = "message_type", nullable = false)
     private MessageType messageType = MessageType.TEXT;
 
+    @Column(name = "file_name")
+    private String fileName;
+
+    @Column(name = "file_path")
+    private String filePath;
+
+    @Column(name = "file_size")
+    private Long fileSize;
+
     @Column(name = "sent_at", nullable = false)
     private LocalDateTime sentAt;
 
