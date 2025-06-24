@@ -17,4 +17,8 @@ public class MainController {
     public String homeRedirect() {
         return "redirect:/index";
     }
+    @GetMapping("/friends")
+    public String friendsPage() {
+        return "friends"; // 확장자 생략 → templates/friends.html 사용
+    }
 }
