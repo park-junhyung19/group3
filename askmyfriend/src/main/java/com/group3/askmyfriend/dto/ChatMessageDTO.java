@@ -16,6 +16,9 @@ public class ChatMessageDTO {
     private String senderNickname;
     private String content;
     private String messageType;
+    private String fileName;
+    private String filePath;
+    private Long fileSize;
     private String sentAt;
     private Boolean isDeleted;
 
@@ -26,6 +29,9 @@ public class ChatMessageDTO {
         this.senderNickname = entity.getSender().getNickname();
         this.content = entity.getContent();
         this.messageType = entity.getMessageType().name();
+        this.fileName = entity.getFileName();
+        this.filePath = entity.getFilePath();
+        this.fileSize = entity.getFileSize();
         this.sentAt = entity.getSentAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         this.isDeleted = entity.getIsDeleted();
     }

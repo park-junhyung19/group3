@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -127,6 +128,40 @@ public class ChatController {
         Long currentUserId = getCurrentUserId();
         List<UserEntity> users = chatService.searchUsers(keyword, currentUserId);
         return ResponseEntity.ok(users);
+    }
+
+    /**
+     * 이미지 파일 업로드
+     */
+    @PostMapping("/api/upload/image")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> uploadImage(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("roomId") Long roomId) {
+        try {
+            Long userId = getCurrentUserId();
+            Map<String, Object> response = chatService.uploadFile(file, roomId, userId, "IMAGE");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 파일 업로드
+     */
+    @PostMapping("/api/upload/file")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("roomId") Long roomId) {
+        try {
+            Long userId = getCurrentUserId();
+            Map<String, Object> response = chatService.uploadFile(file, roomId, userId, "FILE");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     /**

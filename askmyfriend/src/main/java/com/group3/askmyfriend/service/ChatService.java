@@ -10,10 +10,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -230,5 +234,96 @@ public class ChatService {
             .filter(user -> "ACTIVE".equals(user.getStatus()))
             .limit(10)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * 파일 업로드 처리
+     */
+    public Map<String, Object> uploadFile(MultipartFile file, Long roomId, Long userId, String fileType) throws IOException {
+        // 파일 유효성 검사
+        validateFile(file, fileType);
+        
+        // 사용자가 해당 방의 참여자인지 확인
+        boolean isParticipant = chatParticipantRepository
+            .findByChatRoomRoomIdAndUserUserIdAndIsActiveTrue(roomId, userId)
+            .isPresent();
+            
+        if (!isParticipant) {
+            throw new RuntimeException("채팅방 참여자가 아닙니다.");
+        }
+        
+        // 파일 저장
+        String originalFileName = file.getOriginalFilename();
+        String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        String savedFileName = UUID.randomUUID().toString() + fileExtension;
+        
+        Path uploadDir = Paths.get("src/main/resources/static/uploads/chat");
+        Files.createDirectories(uploadDir);
+        
+        Path filePath = uploadDir.resolve(savedFileName);
+        Files.copy(file.getInputStream(), filePath);
+        
+        // 메시지 생성
+        ChatRoomEntity room = chatRoomRepository.findById(roomId)
+            .orElseThrow(() -> new RuntimeException("채팅방을 찾을 수 없습니다."));
+        UserEntity sender = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        
+        ChatMessageEntity message = new ChatMessageEntity();
+        message.setChatRoom(room);
+        message.setSender(sender);
+        message.setContent(originalFileName); // 원본 파일명을 content로 설정
+        message.setMessageType("IMAGE".equals(fileType) ? 
+            ChatMessageEntity.MessageType.IMAGE : ChatMessageEntity.MessageType.FILE);
+        message.setFileName(originalFileName);
+        message.setFilePath("/uploads/chat/" + savedFileName);
+        message.setFileSize(file.getSize());
+        
+        chatMessageRepository.save(message);
+        
+        // 채팅방 마지막 메시지 시간 업데이트
+        room.setLastMessageAt(LocalDateTime.now());
+        chatRoomRepository.save(room);
+        
+        // 응답 데이터 구성
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", new ChatMessageDTO(message));
+        response.put("filePath", message.getFilePath());
+        
+        return response;
+    }
+    
+    /**
+     * 파일 유효성 검사
+     */
+    private void validateFile(MultipartFile file, String fileType) {
+        if (file.isEmpty()) {
+            throw new RuntimeException("파일이 비어있습니다.");
+        }
+        
+        String originalFileName = file.getOriginalFilename();
+        if (originalFileName == null || originalFileName.isEmpty()) {
+            throw new RuntimeException("파일명이 유효하지 않습니다.");
+        }
+        
+        String extension = originalFileName.substring(originalFileName.lastIndexOf(".") + 1).toLowerCase();
+        long fileSize = file.getSize();
+        
+        if ("IMAGE".equals(fileType)) {
+            // 이미지 파일 검증
+            Set<String> allowedImageTypes = Set.of("jpg", "jpeg", "png", "gif", "webp");
+            if (!allowedImageTypes.contains(extension)) {
+                throw new RuntimeException("지원하지 않는 이미지 형식입니다. (jpg, jpeg, png, gif, webp만 지원)");
+            }
+            if (fileSize > 10 * 1024 * 1024) { // 10MB
+                throw new RuntimeException("이미지 파일 크기는 10MB를 초과할 수 없습니다.");
+            }
+        } else {
+            // 일반 파일 검증
+            if (fileSize > 50 * 1024 * 1024) { // 50MB
+                throw new RuntimeException("파일 크기는 50MB를 초과할 수 없습니다.");
+            }
+        }
     }
 }
