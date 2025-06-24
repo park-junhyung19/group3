@@ -49,22 +49,88 @@
             background-color: white;
             border: 1px solid #dee2e6;
         }
+        
+        /* 타임스탬프 가시성 개선 */
+        .message-timestamp {
+            font-size: 0.75em;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 8px;
+            background-color: rgba(0, 0, 0, 0.1);
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+        
+        .message.own .message-timestamp {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .message.other .message-timestamp {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: rgba(0, 0, 0, 0.7);
+        }
+        
         .chat-input {
             border-top: 1px solid #dee2e6;
             padding: 15px;
             background-color: white;
         }
+        
+        /* 채팅방 리스트 색상 차별화 */
         .room-item {
             cursor: pointer;
             border-bottom: 1px solid #dee2e6;
+            transition: all 0.2s ease;
         }
+        
+        .room-item:nth-child(odd) {
+            background-color: #ffffff;
+        }
+        
+        .room-item:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .room-item:nth-child(3n) {
+            background-color: #f0f8ff;
+        }
+        
+        .room-item:nth-child(4n) {
+            background-color: #f9f9f9;
+        }
+        
+        .room-item:nth-child(5n) {
+            background-color: #fafafa;
+        }
+        
         .room-item:hover {
-            background-color: #e9ecef;
+            background-color: #e3f2fd !important;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+            transform: translateY(-1px);
         }
+        
         .room-item.active {
-            background-color: #007bff;
+            background-color: #007bff !important;
             color: white;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
         }
+        
+        /* 채팅방 리스트 타이밍 표시 개선 */
+        .room-timestamp {
+            font-size: 0.7em;
+            font-weight: 500;
+            padding: 1px 4px;
+            border-radius: 4px;
+            background-color: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+        }
+        
+        .room-item.active .room-timestamp {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
         .unread-badge {
             background-color: #dc3545;
             color: white;
@@ -302,7 +368,7 @@
                 });
         }
 
-        // 채팅방 아이템 생성
+        // 채팅방 아이템 생성 (타임스탬프 개선)
         function createRoomItem(room) {
             const div = document.createElement('div');
             div.className = 'room-item p-3';
@@ -322,7 +388,7 @@
                     </div>
                     <div class="text-end">
                         ${room.unreadCount > 0 ? `<span class="unread-badge">${room.unreadCount}</span>` : ''}
-                        <div class="text-muted small">${room.lastMessageAt ? formatTime(room.lastMessageAt) : ''}</div>
+                        <div class="room-timestamp">${room.lastMessageAt ? formatTime(room.lastMessageAt) : ''}</div>
                     </div>
                 </div>
             `;
@@ -520,7 +586,7 @@
                 });
         }
 
-        // 메시지 표시
+        // 메시지 표시 (타임스탬프 개선)
         function displayMessage(message) {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
@@ -532,7 +598,7 @@
                 <div class="message-bubble">
                     ${!isOwn ? `<div class="text-muted small mb-1">${escapeHtml(message.senderNickname)}</div>` : ''}
                     <div>${escapeHtml(message.content)}</div>
-                    <div class="text-muted small mt-1">${formatTime(message.sentAt)}</div>
+                    <div class="message-timestamp">${formatTime(message.sentAt)}</div>
                 </div>
             `;
             
