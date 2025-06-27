@@ -221,6 +221,52 @@
             max-height: 100px;
             border-radius: 4px;
         }
+        .message-wrapper {
+    margin-bottom: 15px;
+    align-items: flex-end;
+}
+    .message-wrapper {
+        display: flex;
+        margin-bottom: 15px;
+        align-items: flex-end;
+    }
+    
+    .message.own .message-wrapper {
+        justify-content: flex-end;
+        flex-direction: row; /* 내 메시지: 메시지 버블 + 프로필 사진 */
+    }
+    
+    .message.other .message-wrapper {
+        justify-content: flex-start;
+        flex-direction: row; /* 상대방 메시지: 프로필 사진 + 메시지 버블 */
+    }
+    
+    .profile-image-container {
+        flex-shrink: 0;
+        align-self: flex-end;
+    }
+    
+    .profile-image {
+        border: 2px solid #dee2e6;
+        transition: border-color 0.2s ease;
+    }
+    
+    .profile-image:hover {
+        border-color: #007bff;
+    }
+    
+    /* 메시지 버블 조정 */
+    .message.own .message-bubble,
+    .message.other .message-bubble {
+        max-width: calc(100% - 50px); /* 프로필 이미지 공간 확보 */
+    }
+    
+    /* 기존 text-align 스타일 제거하고 flex로 대체 */
+    .message.own {
+        text-align: unset; /* 기존 text-align 제거 */
+    }
+
+        
     </style>
 </head>
 <body>
@@ -673,56 +719,77 @@
         }
 
         // 메시지 표시 (타임스탬프 개선)
-        function displayMessage(message) {
-            const messagesContainer = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            
-            const isOwn = message.senderNickname === currentUserNickname;
-            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
-            
-            let contentHtml = '';
-            
-            // 메시지 타입에 따른 content 생성
-            if (message.messageType === 'IMAGE') {
-                contentHtml = `
-                    <div class="message-image-container">
-                        <img src="${message.filePath}" alt="${escapeHtml(message.fileName)}" 
-                             class="message-image" onclick="openImageModal('${message.filePath}', '${escapeHtml(message.fileName)}')">
-                        <div class="file-name small text-muted mt-1">${escapeHtml(message.fileName)}</div>
+function displayMessage(message) {
+    const messagesContainer = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    
+    const isOwn = message.senderNickname === currentUserNickname;
+    messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+    
+    let contentHtml = '';
+    
+    // 메시지 타입에 따른 content 생성
+    if (message.messageType === 'IMAGE') {
+        contentHtml = `
+            <div class="message-image-container">
+                <img src="${message.filePath}" alt="${escapeHtml(message.fileName)}" 
+                     class="message-image" onclick="openImageModal('${message.filePath}', '${escapeHtml(message.fileName)}')">
+                <div class="file-name small text-muted mt-1">${escapeHtml(message.fileName)}</div>
+            </div>
+        `;
+    } else if (message.messageType === 'FILE') {
+        const fileSize = formatFileSize(message.fileSize);
+        contentHtml = `
+            <div class="message-file">
+                <div class="file-info">
+                    <i class="fas fa-file file-icon"></i>
+                    <div class="file-details">
+                        <div class="file-name">${escapeHtml(message.fileName)}</div>
+                        <div class="file-size">${fileSize}</div>
                     </div>
-                `;
-            } else if (message.messageType === 'FILE') {
-                const fileSize = formatFileSize(message.fileSize);
-                contentHtml = `
-                    <div class="message-file">
-                        <div class="file-info">
-                            <i class="fas fa-file file-icon"></i>
-                            <div class="file-details">
-                                <div class="file-name">${escapeHtml(message.fileName)}</div>
-                                <div class="file-size">${fileSize}</div>
-                            </div>
-                            <a href="${message.filePath}" download="${message.fileName}" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-download"></i>
-                            </a>
-                        </div>
-                    </div>
-                `;
-            } else {
-                // TEXT 메시지
-                contentHtml = `<div>${escapeHtml(message.content)}</div>`;
-            }
-            
-            messageDiv.innerHTML = `
-                <div class="message-bubble">
-                    ${!isOwn ? `<div class="text-muted small mb-1">${escapeHtml(message.senderNickname)}</div>` : ''}
-                    ${contentHtml}
-                    <div class="message-timestamp">${formatTime(message.sentAt)}</div>
+                    <a href="${message.filePath}" download="${message.fileName}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i>
+                    </a>
                 </div>
-            `;
-            
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
+            </div>
+        `;
+    } else {
+        // TEXT 메시지
+        contentHtml = `<div>${escapeHtml(message.content)}</div>`;
+    }
+    
+    // 프로필 이미지가 있는 경우와 없는 경우 처리
+    const profileImg = message.senderProfileImg || '/img/profile_default.jpg';
+    
+    messageDiv.innerHTML = `
+        <div class="message-wrapper">
+            ${!isOwn ? `
+                <div class="profile-image-container me-2">
+                    <img src="${profileImg}" alt="${escapeHtml(message.senderNickname)}" 
+                         class="profile-image rounded-circle" 
+                         style="width: 32px; height: 32px; object-fit: cover;"
+                         onerror="this.src='/img/profile_default.jpg'">
+                </div>
+            ` : ''}
+            <div class="message-bubble">
+                ${!isOwn ? `<div class="text-muted small mb-1">${escapeHtml(message.senderNickname)}</div>` : ''}
+                ${contentHtml}
+                <div class="message-timestamp">${formatTime(message.sentAt)}</div>
+            </div>
+            ${isOwn ? `
+                <div class="profile-image-container ms-2">
+                    <img src="${profileImg}" alt="${escapeHtml(message.senderNickname)}" 
+                         class="profile-image rounded-circle" 
+                         style="width: 32px; height: 32px; object-fit: cover;"
+                         onerror="this.src='/img/profile_default.jpg'">
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
 
         // 메시지 전송
         function sendMessage() {
