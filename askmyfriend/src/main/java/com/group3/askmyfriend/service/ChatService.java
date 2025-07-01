@@ -1,6 +1,7 @@
 package com.group3.askmyfriend.service;
 
 import com.group3.askmyfriend.dto.ChatMessageDTO;
+import com.group3.askmyfriend.dto.ChatReportRequestDto;
 import com.group3.askmyfriend.dto.ChatRoomDTO;
 import com.group3.askmyfriend.entity.*;
 import com.group3.askmyfriend.repository.*;
@@ -35,6 +36,9 @@ public class ChatService {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private ChatReportService chatReportService; // ChatReportService 주입
+
 
     /**
      * 사용자의 모든 채팅방 목록 조회
@@ -323,4 +327,8 @@ public class ChatService {
             }
         }
     }
+    public void reportChatMessage(ChatReportRequestDto dto, Long reporterId) {
+        chatReportService.reportMessage(dto, reporterId);
+    }
+
 }		

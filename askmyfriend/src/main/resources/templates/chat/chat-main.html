@@ -434,6 +434,41 @@
             </div>
         </div>
     </div>
+<div id="reportModal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-flag"></i> 메시지 신고하기</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>이 메시지를 신고하는 이유를 선택해주세요.</p>
+                <div class="report-reasons">
+                    <label class="report-reason">
+                        <input type="radio" name="reportReason" value="spam">
+                        <span>스팸 또는 광고</span>
+                    </label>
+                    <label class="report-reason">
+                        <input type="radio" name="reportReason" value="harassment">
+                        <span>괴롭힘 또는 혐오 발언</span>
+                    </label>
+                    <label class="report-reason">
+                        <input type="radio" name="reportReason" value="inappropriate">
+                        <span>부적절한 콘텐츠</span>
+                    </label>
+                    <label class="report-reason">
+                        <input type="radio" name="reportReason" value="other">
+                        <span>기타</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-danger" onclick="submitReport()">신고하기</button>
+            </div>
+        </div>
+    </div>
+</div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
@@ -446,9 +481,13 @@
         let currentUserNickname = /*[[${currentUserNickname}]]*/ '';
         let selectedUsers = [];
         let typingTimeout = null;
+        let currentReportMessageId = null;
+        let reportModal = null;
 
         // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', function() {
+            reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
+
             console.log('페이지 로드 완료, 현재 사용자:', currentUser, currentUserNickname);
             connect();
             loadChatRooms();
@@ -760,7 +799,15 @@ function displayMessage(message) {
     
     // 프로필 이미지가 있는 경우와 없는 경우 처리
     const profileImg = message.senderProfileImg || '/img/profile_default.jpg';
-    
+    // 🔥 신고 버튼 추가
+    const reportButtonHtml = !isOwn ? `
+        <button class="btn btn-sm btn-outline-danger report-btn" 
+                onclick="openReportModal(${message.messageId})" 
+                title="신고하기">
+            <i class="fas fa-flag"></i>
+        </button>
+    ` : '';
+        
     messageDiv.innerHTML = `
         <div class="message-wrapper">
             ${!isOwn ? `
@@ -776,6 +823,7 @@ function displayMessage(message) {
                 ${contentHtml}
                 <div class="message-timestamp">${formatTime(message.sentAt)}</div>
             </div>
+            ${reportButtonHtml}
             ${isOwn ? `
                 <div class="profile-image-container ms-2">
                     <img src="${profileImg}" alt="${escapeHtml(message.senderNickname)}" 
@@ -790,7 +838,6 @@ function displayMessage(message) {
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
-
         // 메시지 전송
         function sendMessage() {
             const messageInput = document.getElementById('messageInput');
@@ -1177,6 +1224,52 @@ function createGroupRoom() {
                 .catch(error => console.error('채팅방 나가기 오류:', error));
             }
         }
+     // 신고 모달 열기
+        function openReportModal(messageId) {
+            currentReportMessageId = messageId;
+            
+            // 라디오 버튼 초기화
+            document.querySelectorAll('input[name="reportReason"]').forEach(radio => {
+                radio.checked = false;
+            });
+
+            reportModal.show();
+        }
+
+        // 신고 제출
+        function submitReport() {
+            const selectedReason = document.querySelector('input[name="reportReason"]:checked');
+            if (!selectedReason) {
+                alert('신고 사유를 선택해주세요.');
+                return;
+            }
+            
+            const reportData = {
+                messageId: currentReportMessageId,
+                reason: selectedReason.value
+            };
+
+            fetch('/chat/api/report/message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(reportData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('신고가 접수되었습니다. 검토 후 적절한 조치를 취하겠습니다.');
+                    reportModal.hide();
+                } else {
+                    alert('신고 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('신고 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+            });
+        }
+
     </script>
 </body>
 </html>
