@@ -5,17 +5,21 @@ import com.group3.askmyfriend.entity.AdminEntity;
 import com.group3.askmyfriend.entity.InquiryEntity;
 import com.group3.askmyfriend.entity.ReportEntity;
 import com.group3.askmyfriend.entity.UserEntity;
+import com.group3.askmyfriend.entity.ChatReport;
 import com.group3.askmyfriend.service.AdminService;
 import com.group3.askmyfriend.service.ChatLogService;
 import com.group3.askmyfriend.service.InquiryService;
 import com.group3.askmyfriend.service.ReportService;
 import com.group3.askmyfriend.service.UserService;
+import com.group3.askmyfriend.service.ChatReportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -25,7 +29,8 @@ public class AdminController {
     private final ChatLogService chatLogService;
     private final InquiryService inquiryService;
     private final UserService userService;
-    private final ReportService reportService; // 신고 서비스 추가
+    private final ReportService reportService;
+    private final ChatReportService chatReportService;
 
     // 관리자 로그인 페이지
     @GetMapping("/admin-login")
@@ -95,11 +100,35 @@ public class AdminController {
         return "redirect:/admin/members";
     }
 
-    // 신고 목록 보기 (추가된 메서드)
+    // 신고 목록 보기 (기존 게시글/댓글 신고)
     @GetMapping("/admin/reports")
     public String showReportList(Model model) {
         List<ReportEntity> reports = reportService.findAll();
         model.addAttribute("reports", reports);
         return "admin/reports";
+    }
+
+    // 채팅 신고 목록 보기
+    @GetMapping("/admin/chat-reports")
+    public String showChatReportList(Model model) {
+        List<ChatReport> chatReports = chatReportService.getAllChatReports();
+        model.addAttribute("reports", chatReports);
+        return "admin/chatreports";
+    }
+
+    // 채팅 신고 처리 API (수정됨)
+    @PatchMapping("/admin/chat-reports/{id}/process")
+    @ResponseBody
+    public ResponseEntity<String> processChatReport(@PathVariable Long id, 
+                                                  @RequestBody Map<String, String> request) {
+        try {
+            String status = request.get("status");
+            // 실제 채팅 신고 처리 로직 활성화
+            chatReportService.updateStatus(id, status);
+            
+            return ResponseEntity.ok("success");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("error");
+        }
     }
 }

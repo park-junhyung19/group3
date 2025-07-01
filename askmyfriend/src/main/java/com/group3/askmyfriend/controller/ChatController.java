@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 import com.group3.askmyfriend.dto.GroupChatRequestDTO; // ✅ 이 부분을 추가하세요.
+import com.group3.askmyfriend.dto.ChatReportRequestDto; // DTO 임포트
 
 @Controller
 @RequestMapping("/chat")
@@ -174,4 +175,4 @@ public class ChatController {
             .map(UserEntity::getUserId)
             .orElseThrow(() -> new RuntimeException("현재 사용자를 찾을 수 없습니다."));
     }
-}
+    }
