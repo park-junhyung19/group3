@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
-import 'pages/index.dart'; // 최신 메인 페이지
-import 'pages/mypage.dart'; // 마이페이지
-import 'pages/friends.dart'; // 친구 관리
-import 'pages/setting.dart'; // 설정
-import 'pages/inquiry_form.dart'; // 1:1 문의하기
-import 'pages/inquiry_list.dart'; // 1:1 문의 목록
-import 'pages/chat.dart'; // ← chat.dart 파일 import
+import 'pages/index.dart';
+import 'pages/mypage.dart';
+import 'pages/friends.dart';
+import 'pages/setting.dart';
+import 'pages/inquiry_form.dart';
+import 'pages/inquiry_list.dart';
+import 'pages/chat.dart';
+import 'pages/admin_dashboard_page.dart';
+import 'pages/admin_member_page.dart';
+import 'pages/admin_report_page.dart';
+import 'pages/admin_chatreport_page.dart';
+import 'pages/admin_inquiry_page.dart';
+import 'pages/admin_chatlog.dart'; // ← 추가
+
 void main() {
   runApp(const MyApp());
 }
@@ -27,15 +34,19 @@ class MyApp extends StatelessWidget {
       routes: {
         '/auth/login': (context) => const LoginPage(),
         '/auth/signup': (context) => const SignupPage(),
-        '/index': (context) => const IndexPage(), // 메인 페이지
-        '/mypage': (context) => const MyPageScreen(), // 마이페이지
-        '/friends': (context) => const FriendsScreen(), // 친구 관리
-        '/setting': (context) => const SettingsScreen(), // 설정
-        '/inquiry_form': (context) => const InquiryFormScreen(), // 1:1 문의하기
-          '/inquiry_list': (context) => const InquiryListScreen(), // ← 추가!
-'/chat': (context) => ChatListScreen(),
-
-
+        '/index': (context) => const IndexPage(),
+        '/mypage': (context) => const MyPageScreen(),
+        '/friends': (context) => const FriendsScreen(),
+        '/setting': (context) => const SettingsScreen(),
+        '/inquiry_form': (context) => const InquiryFormScreen(),
+        '/inquiry_list': (context) => const InquiryListScreen(),
+        '/chat': (context) => ChatListScreen(),
+        '/admin/dashboard': (context) => AdminDashboardPage(),
+        '/admin/members': (context) => AdminMemberPage(),
+        '/admin/reports': (context) => AdminReportPage(),
+        '/admin/chat-reports': (context) => AdminChatreportPage(),
+        '/admin/inquiries': (context) => Admininquirypage(),
+        '/admin/chatlog': (context) => AdminChatlog(), // ← 추가!
       },
     );
   }

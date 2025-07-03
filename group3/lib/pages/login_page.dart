@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,20 +14,23 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final idController = TextEditingController();
   final pwController = TextEditingController();
+  final storage = FlutterSecureStorage();
 
   bool isLoading = false;
 
   Future<void> loginUser() async {
-    setState(() { isLoading = true; });
+    setState(() {
+      isLoading = true;
+    });
     print('로그인 버튼 클릭됨!');
 
-    final url = Uri.parse('http://172.31.98.232:8080/auth/loginProc');
+    final url = Uri.parse('http://172.31.98.232:8080/api/auth/login');
     final headers = {
       "Content-Type": "application/json",
       "Accept": "application/json",
     };
     final body = jsonEncode({
-      "loginId": idController.text,  
+      "loginId": idController.text,
       "password": pwController.text,
     });
 
@@ -38,9 +43,15 @@ class _LoginPageState extends State<LoginPage> {
       print('서버 응답 코드: ${response.statusCode}');
       print('서버 응답 바디: ${response.body}');
 
-      // 200 (성공) 또는 302 (리다이렉트)를 모두 성공으로 처리
-      if (response.statusCode == 200 || response.statusCode == 302) {
-        print("로그인 성공!");
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final token = responseData['token'];
+        if (token != null) {
+          await storage.write(key: 'jwt', value: token);
+          handleLoginSuccess(token); // ✅ 사용자 정보 디코딩
+          print("JWT 토큰 저장됨: $token");
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("로그인 성공!")),
         );
@@ -68,8 +79,23 @@ class _LoginPageState extends State<LoginPage> {
       );
     } finally {
       print("로그인 함수 종료, isLoading=false");
-      setState(() { isLoading = false; });
+      setState(() {
+        isLoading = false;
+      });
     }
+  }
+
+  void handleLoginSuccess(String token) async {
+    await storage.write(key: 'jwt', value: token);
+    final decoded = JwtDecoder.decode(token);
+    final userId = decoded['sub'];
+    print("✅ 현재 로그인된 사용자 ID: $userId");
+  }
+
+  Future<void> logoutUser() async {
+    await storage.delete(key: 'jwt');
+    print("JWT 토큰 삭제됨");
+    Navigator.pushReplacementNamed(context, '/auth/login');
   }
 
   @override
@@ -125,9 +151,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 12),
                 TextButton(
-                  onPressed: () {
-                    // 비밀번호 찾기 기능 구현 시 연결
-                  },
+                  onPressed: () {},
                   child: const Text('비밀번호를 잊으셨나요?'),
                 ),
                 Row(
@@ -142,9 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
-                  onPressed: () {
-                    // Google 로그인 구현 시 연결
-                  },
+                  onPressed: () {},
                   icon: const Icon(Icons.g_mobiledata),
                   label: const Text('Google 로그인'),
                   style: OutlinedButton.styleFrom(
@@ -162,6 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: const Text('새 계정 만들기', style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
+                const SizedBox(height: 18),
               ],
             ),
           ),
