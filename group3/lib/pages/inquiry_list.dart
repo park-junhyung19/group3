@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class Inquiry {
   final String title;
   final String content;
-  final String status; // '미답변' or '답변완료'
+  final String status;
   final DateTime createdAt;
   final String? adminReply;
 
@@ -14,132 +17,144 @@ class Inquiry {
     required this.createdAt,
     this.adminReply,
   });
+
+  factory Inquiry.fromJson(Map<String, dynamic> json) {
+    return Inquiry(
+      title: json['title'] ?? '',
+      content: json['content'] ?? '',
+      status: json['status'] ?? '미답변',
+      createdAt: DateTime.parse(json['createdAt']),
+      adminReply: json['reply'],
+    );
+  }
 }
 
-class InquiryListScreen extends StatelessWidget {
+class InquiryListScreen extends StatefulWidget {
   const InquiryListScreen({super.key});
 
-  // 예시 더미 데이터
-  List<Inquiry> get inquiries => [
-        Inquiry(
-          title: '로그인 오류가 발생해요',
-          content: '앱에서 로그인이 되지 않고 계속 에러가 납니다. 어떻게 해야 하나요?',
-          status: '미답변',
-          createdAt: DateTime(2025, 6, 20, 14, 30),
-        ),
-        Inquiry(
-          title: '프로필 사진 변경 문의',
-          content: '프로필 사진을 바꾸고 싶은데, 어떤 형식의 이미지만 가능한가요?',
-          status: '답변완료',
-          createdAt: DateTime(2025, 6, 18, 10, 5),
-          adminReply: 'jpg, png, gif 이미지를 지원합니다.',
-        ),
-      ];
+  @override
+  State<InquiryListScreen> createState() => _InquiryListScreenState();
+}
+
+class _InquiryListScreenState extends State<InquiryListScreen> {
+  final _storage = const FlutterSecureStorage();
+  late Future<List<Inquiry>> _inquiriesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _inquiriesFuture = _fetchInquiries();
+  }
+
+  Future<List<Inquiry>> _fetchInquiries() async {
+    const apiUrl = 'http://172.31.98.234:8080/api/setting/my-inquiries'; // ✅ 실제 API 주소
+    final token = await _storage.read(key: 'jwt'); // ✅ jwt 키 사용
+
+    if (token == null) {
+      throw Exception('JWT 토큰이 없습니다.');
+    }
+
+    final response = await http.get(
+      Uri.parse(apiUrl),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonList = jsonDecode(utf8.decode(response.bodyBytes));
+      return jsonList.map((e) => Inquiry.fromJson(e)).toList();
+    } else {
+      throw Exception('문의 불러오기 실패: ${response.statusCode}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pushNamedAndRemoveUntil(context, '/index', (route) => false);
-          },
+        title: const Text(
+          '나의 1:1 문의 목록',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
-        title: const Text('나의 1:1 문의 목록',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
         backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         elevation: 0.5,
-        centerTitle: false,
-        automaticallyImplyLeading: false,
       ),
-      body: inquiries.isEmpty
-          ? const Center(
-              child: Text(
-                '문의 내역이 없습니다.',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
-              ),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
-              itemCount: inquiries.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
-              itemBuilder: (context, idx) {
-                final inquiry = inquiries[idx];
-                return Card(
-                  elevation: 1.5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 제목과 상태 뱃지
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
+      body: FutureBuilder<List<Inquiry>>(
+        future: _inquiriesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('오류 발생: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('문의 내역이 없습니다.'));
+          }
+
+          final inquiries = snapshot.data!;
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+            itemCount: inquiries.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 14),
+            itemBuilder: (context, idx) {
+              final inquiry = inquiries[idx];
+              return Card(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 1.5,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              inquiry.title,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          _StatusBadge(status: inquiry.status),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        inquiry.content,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Text(
+                            _formatDate(inquiry.createdAt),
+                            style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          ),
+                          const Spacer(),
+                          if (inquiry.adminReply != null)
+                            Flexible(
                               child: Text(
-                                inquiry.title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  color: Colors.black87,
-                                ),
+                                '답변: ${inquiry.adminReply!}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            _StatusBadge(status: inquiry.status),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        // 내용 요약
-                        Text(
-                          inquiry.content,
-                          style: const TextStyle(fontSize: 14, color: Colors.black87),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 10),
-                        // 하단: 날짜, 답변
-                        Row(
-                          children: [
-                            Text(
-                              _formatDate(inquiry.createdAt),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.black45,
-                              ),
-                            ),
-                            const Spacer(),
-                            if (inquiry.adminReply != null)
-                              Icon(Icons.mark_email_read, color: Colors.green, size: 18),
-                            if (inquiry.adminReply != null)
-                              const SizedBox(width: 4),
-                            if (inquiry.adminReply != null)
-                              Flexible(
-                                child: Text(
-                                  inquiry.adminReply!,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                          ],
-                        ),
-                      ],
-                    ),
+                            )
+                        ],
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -152,6 +167,7 @@ class InquiryListScreen extends StatelessWidget {
 class _StatusBadge extends StatelessWidget {
   final String status;
   const _StatusBadge({required this.status});
+
   @override
   Widget build(BuildContext context) {
     final isDone = status == '답변완료';

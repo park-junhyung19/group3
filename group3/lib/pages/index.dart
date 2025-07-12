@@ -1,40 +1,67 @@
+// lib/pages/index_page.dart
+
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:http/http.dart' as http;
+import 'app_drawer.dart';  // 같은 lib/pages/ 폴더 내이므로 상대경로로
+
+const String baseUrl = 'http://172.31.98.235:8080';
 
 class IndexPage extends StatefulWidget {
-  const IndexPage({super.key});
+  const IndexPage({Key? key}) : super(key: key);
 
   @override
   State<IndexPage> createState() => _IndexPageState();
 }
 
 class _IndexPageState extends State<IndexPage> {
-  final storage = const FlutterSecureStorage();
-  String userId = '...'; // 초기 표시용
-  final String profileImg = 'assets/Screenshot_20250625_034855_KakaoStory1.jpg';
+  final _storage = const FlutterSecureStorage();
+  String _userId = '...';
+  String _profileRawPath = ''; // 서버가 내려주는 rawPath, 예: "/uploads/abc.jpg"
 
   @override
   void initState() {
     super.initState();
-    loadUserIdFromToken();
+    _loadUserInfo();
   }
 
-  Future<void> loadUserIdFromToken() async {
-    final token = await storage.read(key: 'jwt');
-    if (token != null) {
-      try {
-        final decoded = JwtDecoder.decode(token);
-        final id = decoded['sub'];
-        setState(() {
-          userId = id;
-        });
-        print("✅ IndexPage에서 로그인된 사용자: $userId");
-      } catch (e) {
-        print("❌ 토큰 디코딩 실패: $e");
-      }
+  Future<void> _loadUserInfo() async {
+    final token = await _storage.read(key: 'jwt');
+    if (token == null) return;
+
+    // 1) JWT에서 userId 추출
+    try {
+      final decoded = JwtDecoder.decode(token);
+      _userId = decoded['sub'] as String? ?? '...';
+    } catch (e) {
+      debugPrint('❌ JWT 디코딩 실패: $e');
+      return;
+    }
+
+    // 2) 백엔드에서 “내 프로필” rawPath 받아오기
+    final resp = await http.get(
+      Uri.parse('$baseUrl/api/users/me'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (resp.statusCode == 200) {
+      final data = json.decode(resp.body) as Map<String, dynamic>;
+      setState(() {
+        _profileRawPath = data['profileImg'] as String? ?? '';
+        _userId = _userId;  // userId는 변함 없음
+      });
+      debugPrint('✅ 로그인 사용자: $_userId, rawPath: $_profileRawPath');
     } else {
-      print("❌ JWT 토큰이 저장되어 있지 않음.");
+      debugPrint('⚠️ 프로필 API 실패: ${resp.statusCode}');
+      setState(() {
+        _profileRawPath = '';
+        _userId = _userId;
+      });
     }
   }
 
@@ -42,154 +69,16 @@ class _IndexPageState extends State<IndexPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('홈 - $userId'),
+        title: Text('홈 - $_userId'),
         actions: [
           IconButton(icon: const Icon(Icons.search), onPressed: () {}),
           IconButton(icon: const Icon(Icons.notifications), onPressed: () {}),
         ],
       ),
-      drawer: Drawer(
-        child: Container(
-          color: Colors.white,
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.only(left: 24, bottom: 8),
-                child: Text(
-                  'Daily Log',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 24, bottom: 32),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage: AssetImage(profileImg),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      userId,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _drawerMenuItem(
-                icon: Icons.home,
-                label: '홈',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/index');
-                },
-              ),
-              _drawerMenuItem(
-                icon: Icons.article,
-                label: '글 목록',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/posts');
-                },
-              ),
-              _drawerMenuItem(
-                icon: Icons.notifications,
-                label: '알림',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/notifications');
-                },
-              ),
-              _drawerMenuItem(
-                icon: Icons.people,
-                label: '친구 목록',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/friends');
-                },
-              ),
-              _drawerMenuItem(
-                icon: Icons.chat,
-                label: '채팅',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/chat');
-                },
-              ),
-              _drawerMenuItem(
-                icon: Icons.live_tv,
-                label: '숏폼',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/shorts');
-                },
-              ),
-              _drawerMenuItem(
-                icon: Icons.subscriptions,
-                label: '구독 관리',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/subscriptions');
-                },
-              ),
-              _drawerMenuItem(
-                icon: Icons.person,
-                label: '내 프로필',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/mypage');
-                },
-              ),
-              _drawerMenuItem(
-                icon: Icons.settings,
-                label: '설정',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/setting');
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 24, right: 16),
-                child: Divider(height: 1, color: Colors.grey[300], thickness: 1),
-              ),
-              ListTile(
-                contentPadding: const EdgeInsets.only(left: 24),
-                leading: const Icon(Icons.add),
-                title: const Text('새 글 쓰기', style: TextStyle(fontSize: 16)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/posts/new');
-                },
-              ),
-              ListTile(
-                contentPadding: const EdgeInsets.only(left: 24),
-                leading: const Icon(Icons.logout, color: Colors.redAccent),
-                title: const Text('로그아웃', style: TextStyle(fontSize: 16, color: Colors.redAccent)),
-                onTap: () async {
-                  await storage.delete(key: 'jwt');
-                  print("✅ 로그아웃: JWT 토큰 삭제됨");
-                  Navigator.pushReplacementNamed(context, '/auth/login');
-                },
-              ),
-              ListTile(
-                contentPadding: const EdgeInsets.only(left: 24),
-                leading: const Icon(Icons.nightlight_round, color: Colors.indigo),
-                title: const Text('다크모드', style: TextStyle(fontSize: 16)),
-                onTap: () {
-                  // 다크모드 토글 처리 예정
-                },
-              ),
-            ],
-          ),
-        ),
+      drawer: AppDrawer(
+        currentRoute: '/index',
+        userId: _userId,
+        profileImg: _profileRawPath,  // rawPath 그대로 전달
       ),
       body: Column(
         children: [
@@ -199,12 +88,15 @@ class _IndexPageState extends State<IndexPage> {
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
                 hintText: '게시물, 사용자, 해시태그 검색',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
           Expanded(
             child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: 10,
               itemBuilder: (context, idx) => ListTile(
                 leading: const Icon(Icons.article),
@@ -217,27 +109,9 @@ class _IndexPageState extends State<IndexPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/posts/new');
-        },
+        onPressed: () => Navigator.pushNamed(context, '/posts/new'),
         child: const Icon(Icons.add),
       ),
-    );
-  }
-
-  Widget _drawerMenuItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.only(left: 24),
-      leading: Icon(icon, color: Colors.black87),
-      title: Text(label, style: const TextStyle(fontSize: 16, color: Colors.black87)),
-      onTap: onTap,
-      minLeadingWidth: 28,
-      dense: true,
-      visualDensity: const VisualDensity(vertical: -2),
     );
   }
 }

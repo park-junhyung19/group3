@@ -1,4 +1,13 @@
+// lib/pages/mypage.dart
+
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:http/http.dart' as http;
+import 'app_drawer.dart';  // 같은 lib/pages/ 폴더 내이므로 상대경로로
+
+const String baseUrl = 'http://172.31.98.235:8080';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -9,11 +18,16 @@ class MyPageScreen extends StatefulWidget {
 
 class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _storage = const FlutterSecureStorage();
+
+  String _userId = '...';
+  String _profileRawPath = ''; // 서버에서 넘어오는 "/uploads/xxx.jpg"
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadUserInfo();
   }
 
   @override
@@ -22,71 +36,103 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
+  Future<void> _loadUserInfo() async {
+    final token = await _storage.read(key: 'jwt');
+    if (token == null) return;
+
+    // JWT에서 sub 추출
+    try {
+      final decoded = JwtDecoder.decode(token);
+      _userId = decoded['sub'] as String? ?? '...';
+    } catch (_) {}
+
+    // 프로필 API 호출
+    final resp = await http.get(
+      Uri.parse('$baseUrl/api/users/me'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+    if (resp.statusCode == 200) {
+      final data = json.decode(resp.body) as Map<String, dynamic>;
+      setState(() {
+        _profileRawPath = data['profileImg'] as String? ?? '';
+      });
+    }
+  }
+
+  String _resolveImageUrl(String rawPath) {
+    final filename = Uri.encodeComponent(rawPath.split('/').last);
+    return '$baseUrl/api/posts/image?filename=$filename';
+  }
+
   @override
   Widget build(BuildContext context) {
-    // 첨부하신 이미지를 assets 폴더에 넣고 pubspec.yaml에 등록하세요.
-    final String backgroundImg = 'assets/heroic-20250622-224210-000.jpg'; // 배경(커버) 이미지
-    final String profileImg = 'assets/Screenshot_20250625_034855_KakaoStory1.jpg'; // 프로필 이미지
-
     return Scaffold(
-      backgroundColor: Colors.white,
+      drawer: AppDrawer(
+        currentRoute: '/mypage',
+        userId: _userId,
+        profileImg: _profileRawPath,
+      ),
+      appBar: AppBar(title: const Text('내 프로필')),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 커버 이미지 + 프로필 이미지 (Stack)
+            // 커버 + 프로필
             Stack(
               alignment: Alignment.center,
+              clipBehavior: Clip.none,
               children: [
-                // 커버 이미지
                 Container(
                   width: double.infinity,
                   height: 220,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage(backgroundImg),
+                      image: AssetImage('assets/heroic-20250622-224210-000.jpg'),
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
-                // 프로필 이미지 (아래에 겹치게)
                 Positioned(
                   bottom: -60,
                   child: CircleAvatar(
                     radius: 60,
                     backgroundColor: Colors.white,
-                    backgroundImage: AssetImage(profileImg),
+                    backgroundImage: _profileRawPath.isNotEmpty
+                        ? NetworkImage(_resolveImageUrl(_profileRawPath))
+                        : const AssetImage(
+                            'assets/Screenshot_20250625_034855_KakaoStory1.jpg')
+                            as ImageProvider,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 70), // 프로필 이미지 높이만큼 여백
-            // 닉네임, 소개, 편집 버튼
+            const SizedBox(height: 70),
+            // 닉네임 & 소개 & 버튼
             Column(
               children: [
-                const Text(
-                  '구밍',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
+                Text(
+                  _userId,
+                  style: const TextStyle(
+                      fontSize: 32, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  '구밍입니다',
-                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                  '자기소개를 입력하세요',
+                  style: TextStyle(color: Colors.black54),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     OutlinedButton(
-                      onPressed: () {
-                        // 프로필 편집 페이지 이동
-                      },
+                      onPressed: () {},
                       child: const Text('프로필 편집'),
                     ),
                     const SizedBox(width: 12),
                     OutlinedButton(
-                      onPressed: () {
-                        // 더보기 메뉴 등
-                      },
+                      onPressed: () {},
                       child: const Icon(Icons.more_horiz),
                     ),
                   ],
@@ -94,7 +140,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 const SizedBox(height: 16),
               ],
             ),
-            // 탭바 (게시물/답글/미디어/좋아요)
+            // 탭바
             TabBar(
               controller: _tabController,
               indicatorColor: Colors.black,
@@ -107,47 +153,45 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 Tab(text: '좋아요'),
               ],
             ),
+            // 탭 뷰
             SizedBox(
-              height: 400, // 원하는 높이로 조정
+              height: 400,
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  // 게시물 탭
                   ListView(
+                    padding: const EdgeInsets.all(16),
                     children: const [
                       ListTile(
-                        leading: Icon(Icons.article, color: Colors.black),
-                        title: Text('게시물 제목', style: TextStyle(color: Colors.black)),
-                        subtitle: Text('게시물이 없습니다.', style: TextStyle(color: Colors.black54)),
+                        leading: Icon(Icons.article),
+                        title: Text('게시물이 없습니다.'),
                       ),
                     ],
                   ),
-                  // 답글 탭
                   ListView(
+                    padding: const EdgeInsets.all(16),
                     children: const [
                       ListTile(
-                        leading: Icon(Icons.reply, color: Colors.black),
-                        title: Text('답글 내용', style: TextStyle(color: Colors.black)),
-                        subtitle: Text('아직 작성한 답글이 없습니다.', style: TextStyle(color: Colors.black54)),
+                        leading: Icon(Icons.reply),
+                        title: Text('작성한 답글이 없습니다.'),
                       ),
                     ],
                   ),
-                  // 미디어 탭
                   ListView(
+                    padding: const EdgeInsets.all(16),
                     children: const [
                       ListTile(
-                        leading: Icon(Icons.image, color: Colors.black),
-                        title: Text('업로드한 미디어가 없습니다.', style: TextStyle(color: Colors.black)),
+                        leading: Icon(Icons.image),
+                        title: Text('업로드한 미디어가 없습니다.'),
                       ),
                     ],
                   ),
-                  // 좋아요 탭
                   ListView(
+                    padding: const EdgeInsets.all(16),
                     children: const [
                       ListTile(
-                        leading: Icon(Icons.favorite, color: Colors.black),
-                        title: Text('좋아요한 게시물 제목', style: TextStyle(color: Colors.black)),
-                        subtitle: Text('아직 좋아요한 게시물이 없습니다.', style: TextStyle(color: Colors.black54)),
+                        leading: Icon(Icons.favorite),
+                        title: Text('좋아요한 게시물이 없습니다.'),
                       ),
                     ],
                   ),

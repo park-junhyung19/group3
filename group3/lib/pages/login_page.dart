@@ -1,3 +1,5 @@
+// lib/pages/login_page.dart
+
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -14,7 +16,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final idController = TextEditingController();
   final pwController = TextEditingController();
-  final storage = FlutterSecureStorage();
+  final storage = const FlutterSecureStorage();
 
   bool isLoading = false;
 
@@ -24,14 +26,14 @@ class _LoginPageState extends State<LoginPage> {
     });
     print('로그인 버튼 클릭됨!');
 
-    final url = Uri.parse('http://172.31.98.232:8080/api/auth/login');
+    final url = Uri.parse('http://172.31.98.235:8080/api/auth/login');
     final headers = {
       "Content-Type": "application/json",
       "Accept": "application/json",
     };
     final body = jsonEncode({
-      "loginId": idController.text,
-      "password": pwController.text,
+      "loginId": idController.text.trim(),
+      "password": pwController.text.trim(),
     });
 
     print("로그인 요청 전송! body: $body");
@@ -48,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
         final token = responseData['token'];
         if (token != null) {
           await storage.write(key: 'jwt', value: token);
-          handleLoginSuccess(token); // ✅ 사용자 정보 디코딩
+          handleLoginSuccess(token);
           print("JWT 토큰 저장됨: $token");
         }
 
@@ -110,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(18),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 16)],
+              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 16)],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -155,13 +157,13 @@ class _LoginPageState extends State<LoginPage> {
                   child: const Text('비밀번호를 잊으셨나요?'),
                 ),
                 Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    const Padding(
+                  children: const [
+                    Expanded(child: Divider()),
+                    Padding(
                       padding: EdgeInsets.symmetric(horizontal: 8),
                       child: Text('또는'),
                     ),
-                    const Expanded(child: Divider()),
+                    Expanded(child: Divider()),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -193,3 +195,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+ 
