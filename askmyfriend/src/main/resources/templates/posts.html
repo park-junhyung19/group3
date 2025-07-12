@@ -1,958 +1,890 @@
-<!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>맞팔로우 피드 - Daily Log</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
-  <style>
-    /* ────────────────────────────────────────────────────────
-       다크모드 공통
-    ──────────────────────────────────────────────────────── */
-    body.dark {
-      background: #181a1b !important;
-      color: #e6e6e6 !important;
-    }
-    /* ────────────────────────────────────────────────────────
-       기본 라이트모드
-    ──────────────────────────────────────────────────────── */
-    html, body {
-      height: 100%;
-      margin: 0; padding: 0;
-      font-family: Arial, sans-serif;
-      background: #f8f9fa;
-      color: #333;
-      transition: background 0.2s, color 0.2s;
-    }
-    body {
-      display: flex;
-      flex-direction: row;
-      min-height: 100vh;
-      overflow-x: auto;
-    }
-
-    /* ────────────────────────────────────────────────────────
-       사이드바
-    ──────────────────────────────────────────────────────── */
-    .sidebar {
-      width: 220px;
-      background: #fff;
-      border-right: 1px solid #eee;
-      padding: 24px 0 0 0;
-      box-sizing: border-box;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      transition: background 0.2s, color 0.2s;
-    }
-    /* 다크모드 사이드바 */
-    body.dark .sidebar {
-      background: #1a1c1e;
-      border-color: #222;
-    }
-    .sidebar .logo {
-      font-weight: bold;
-      margin-left: 24px;
-      margin-bottom: 32px;
-      font-size: 18px;
-      color: inherit;
-    }
-    .sidebar .user {
-      display: flex;
-      align-items: center;
-      margin-bottom: 32px;
-      margin-left: 24px;
-    }
-    .sidebar .avatar,
-    .sidebar .default-avatar {
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      margin-right: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: bold; font-size: 18px;
-      background: linear-gradient(45deg, #667eea, #764ba2);
-      color: white;
-    }
-    .sidebar .avatar img {
-      width: 100%; height: 100%; border-radius: 50%;
-      object-fit: cover;
-    }
-    .sidebar ul {
-      list-style: none; padding: 0; margin: 0 0 4px 24px;
-    }
-    .sidebar ul li {
-      margin-bottom: 20px;
-      color: #333;
-      font-size: 16px;
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-    /* 🔥 사이드바 링크 밑줄 제거 */
-    .sidebar ul li a {
-      color: inherit;
-      text-decoration: none; /* 밑줄 제거 */
-      transition: color 0.2s;
-    }
-    .sidebar ul li a:hover {
-      color: #4f46e5;
-    }
-    /* 다크모드 사이드바 리스트 */
-    body.dark .sidebar ul li {
-      color: #e6e6e6;
-    }
-    body.dark .sidebar ul li a {
-      color: inherit;
-      text-decoration: none; /* 다크모드에서도 밑줄 제거 */
-    }
-    body.dark .sidebar ul li a:hover {
-      color: #6366f1;
-    }
-    .sidebar ul li:last-child {
-      position: relative; padding-bottom: 4px;
-    }
-    .sidebar ul li:last-child::after {
-      content: "";
-      position: absolute;
-      bottom: 0; left: 0; right: -5px; height: 1px;
-      background: linear-gradient(to right, #e0e0e0 20%, #e0e0e0 80%, transparent);
-    }
-    body.dark .sidebar ul li:last-child::after {
-      background: linear-gradient(to right, #404040 20%, #404040 80%, transparent);
-    }
-    .sidebar .new-post {
-      margin-left: 24px; margin-bottom: 20px;
-      text-decoration: none; /* 새 글 쓰기 링크도 밑줄 제거 */
-      color: #333; font-size: 16px;
-      transition: color 0.2s;
-    }
-    .sidebar .new-post:hover {
-      color: #4f46e5;
-    }
-    body.dark .sidebar .new-post {
-      color: #e6e6e6;
-      text-decoration: none;
-    }
-    body.dark .sidebar .new-post:hover {
-      color: #6366f1;
-    }
-    .sidebar .logout {
-      margin-left: 24px; color: #888; font-size: 16px;
-      cursor: pointer; margin-bottom: 20px;
-      transition: color 0.2s;
-    }
-    .sidebar .logout:hover {
-      color: #4f46e5;
-    }
-    body.dark .sidebar .logout {
-      color: #e6e6e6;
-    }
-    body.dark .sidebar .logout:hover {
-      color: #6366f1;
-    }
-    .toggle-theme {
-      margin-left: 24px;
-      margin-bottom: 20px;
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      color: #888;
-      padding: 0;
-      transition: all 0.2s ease;
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-    }
-    .toggle-theme:hover {
-      color: #333;
-    }
-    body.dark .toggle-theme {
-      color: #e6e6e6;
-    }
-    body.dark .toggle-theme:hover {
-      color: #fff;
-    }
-
-    /* ────────────────────────────────────────────────────────
-       메인 컨텐츠
-    ──────────────────────────────────────────────────────── */
-    .main-content {
-      flex: 1; background: #f8f9fa;
-      padding: 20px; box-sizing: border-box;
-      overflow-y: auto; min-height: 100vh;
-      transition: background 0.2s, color 0.2s;
-    }
-    body.dark .main-content {
-      background: #181a1b;
-    }
-    .container {
-      max-width: 600px; margin: 0 auto;
-    }
-    .header {
-      text-align: center; margin-bottom: 30px;
-      padding: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 20px; color: white;
-      box-shadow: 0 4px 15px rgba(102,126,234,0.3);
-    }
-    .header h1 {
-      font-size: 2.2rem; margin-bottom: 10px; font-weight: 600;
-    }
-    .header p {
-      font-size: 1rem; opacity: 0.95;
-    }
-    .post-card {
-      background: white; border: 1px solid #e9ecef;
-      border-radius: 16px; padding: 24px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      transition: all 0.3s ease;
-      position: relative;
-    }
-    body.dark .post-card {
-      background: #2a2d31; border-color: #404040;
-      color: #e6e6e6;
-    }
-    .post-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-    }
-    .author-info {
-      display: flex; align-items: center;
-      margin-bottom: 18px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #f1f3f4;
-    }
-    body.dark .author-info {
-      border-color: #404040;
-    }
-    .avatar {
-      width: 50px; height: 50px; border-radius: 50%;
-      background: linear-gradient(45deg, #667eea, #764ba2);
-      display: flex; align-items: center;
-      justify-content: center; color: white;
-      font-weight: 600; font-size: 1.1rem; margin-right: 12px;
-    }
-    .avatar img {
-      width: 100%; height: 100%; border-radius: 50%;
-      object-fit: cover;
-    }
-    .author-details {
-      flex: 1;
-    }
-    .author-details h3 {
-      color: #2c3e50; font-size: 1.1rem; margin-bottom: 4px;
-      font-weight: 600;
-    }
-    body.dark .author-details h3 {
-      color: #e6e6e6;
-    }
-    .author-details .bio {
-      color: #6c757d; font-size: 0.85rem; margin-bottom: 3px;
-    }
-    body.dark .author-details .bio {
-      color: #aaa;
-    }
-    .post-time {
-      color: #adb5bd; font-size: 0.8rem;
-      display: flex; align-items: center;
-    }
-    body.dark .post-time {
-      color: #888;
-    }
-    .post-content {
-      color: #495057; line-height: 1.6; font-size: 1rem;
-      margin-bottom: 16px;
-    }
-    body.dark .post-content {
-      color: #e6e6e6;
-    }
-    .post-image {
-      width: 100%; border-radius: 12px; margin-bottom: 16px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.1);
-    }
-    .post-actions {
-      display: flex; justify-content: space-between;
-      align-items: center; padding-top: 12px;
-      border-top: 1px solid #f1f3f4;
-    }
-    body.dark .post-actions {
-      border-color: #404040;
-    }
-    .action-buttons {
-      display: flex; gap: 16px;
-    }
-    .action-btn {
-      display: flex; align-items: center; gap: 6px;
-      padding: 6px 12px; border: none; background: none;
-      color: #6c757d; cursor: pointer; border-radius: 16px;
-      transition: all 0.2s ease; font-size: 0.85rem;
-      position: relative;
-    }
-    body.dark .action-btn {
-      color: #aaa;
-    }
-    .action-btn:hover {
-      background: #f8f9fa; color: #495057;
-    }
-    body.dark .action-btn:hover {
-      background: #404040; color: #e6e6e6;
-    }
-    .action-btn.liked {
-      color: #dc3545;
-    }
-    .action-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    .action-btn.loading::after {
-      content: '';
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      border: 1px solid transparent;
-      border-top: 1px solid currentColor;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      right: 4px;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-    @keyframes spin {
-      0% { transform: translateY(-50%) rotate(0deg); }
-      100% { transform: translateY(-50%) rotate(360deg); }
-    }
-    
-    /* 신고 버튼 스타일 */
-    .report-btn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      color: #6c757d;
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 50%;
-      transition: all 0.2s ease;
-      font-size: 16px;
-    }
-    .report-btn:hover {
-      background: #f8f9fa;
-      color: #dc3545;
-    }
-    body.dark .report-btn {
-      color: #aaa;
-    }
-    body.dark .report-btn:hover {
-      background: #404040;
-      color: #dc3545;
-    }
-    
-    /* 신고 모달 스타일 - 간단하게 수정 */
-    .report-modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.5);
-      overflow-y: auto;
-    }
-    .report-modal.show {
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .report-modal-content {
-      background-color: #fefefe;
-      margin: 5% auto;
-      padding: 30px;
-      border-radius: 16px;
-      width: 90%;
-      max-width: 450px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      position: relative;
-    }
-    body.dark .report-modal-content {
-      background-color: #2a2d31;
-      color: #e6e6e6;
-    }
-    .report-modal h3 {
-      margin-top: 0;
-      color: #dc3545;
-      font-size: 1.3rem;
-      margin-bottom: 20px;
-    }
-    .report-reasons {
-      margin: 20px 0;
-    }
-    .report-reason {
-      display: block;
-      margin: 12px 0;
-      cursor: pointer;
-      padding: 12px;
-      border-radius: 8px;
-      transition: background 0.2s;
-      border: 1px solid #e9ecef;
-    }
-    .report-reason:hover {
-      background: #f8f9fa;
-      border-color: #dc3545;
-    }
-    body.dark .report-reason {
-      border-color: #404040;
-    }
-    body.dark .report-reason:hover {
-      background: #404040;
-      border-color: #dc3545;
-    }
-    .report-reason input {
-      margin-right: 10px;
-    }
-    .report-buttons {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      margin-top: 30px;
-    }
-    .report-submit-btn, .report-cancel-btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: all 0.2s;
-      font-weight: 500;
-    }
-    .report-submit-btn {
-      background: #dc3545;
-      color: white;
-    }
-    .report-submit-btn:hover {
-      background: #c82333;
-    }
-    .report-cancel-btn {
-      background: #6c757d;
-      color: white;
-    }
-    .report-cancel-btn:hover {
-      background: #545b62;
-    }
-    
-    .no-posts {
-      text-align: center; padding: 60px 20px;
-      background: white; border: 1px solid #e9ecef;
-      border-radius: 16px;
-    }
-    body.dark .no-posts {
-      background: #2a2d31; border-color: #404040;
-      color: #e6e6e6;
-    }
-    .no-posts i {
-      font-size: 3.5rem; color: #dee2e6; margin-bottom: 16px;
-    }
-    body.dark .no-posts i {
-      color: #555;
-    }
-    .no-posts h3 {
-      color: #6c757d; margin-bottom: 8px; font-weight: 500;
-    }
-    body.dark .no-posts h3 {
-      color: #aaa;
-    }
-    .no-posts p {
-      color: #adb5bd; font-size: 0.9rem;
-    }
-    body.dark .no-posts p {
-      color: #888;
-    }
-
-    /* 댓글 */
-    .comments-section {
-      margin-top: 16px; padding-top: 16px;
-      border-top: 1px solid #f1f3f4;
-    }
-    body.dark .comments-section {
-      border-color: #404040;
-    }
-    .comment-form {
-      display: flex; gap: 8px; margin-bottom: 16px;
-    }
-    .comment-form input {
-      flex: 1; padding: 8px 12px;
-      border: 1px solid #ddd; border-radius: 20px;
-      outline: none;
-      transition: background 0.2s, border-color 0.2s, color 0.2s;
-    }
-    body.dark .comment-form input {
-      background: #2a2d31; border-color: #404040; color: #e6e6e6;
-    }
-    .comment-form button {
-      padding: 8px 16px; background: #667eea;
-      color: white; border: none; border-radius: 20px;
-      cursor: pointer;
-    }
-    .comments-list {
-      list-style: none; padding: 0;
-    }
-    .comments-list li {
-      padding: 8px 0; border-bottom: 1px solid #f8f9fa;
-      font-size: 0.9rem;
-    }
-    body.dark .comments-list li {
-      border-color: #404040; color: #e6e6e6;
-    }
-    .comments-list li:last-child {
-      border-bottom: none;
-    }
-
-    @media (max-width:768px) {
-      body { flex-direction: column; }
-      .sidebar { width: 100%; }
-      .main-content { padding: 15px; }
-      .header h1 { font-size:1.8rem; }
-      .post-card { padding:20px; margin-bottom:16px; }  
-      .action-buttons { gap:12px; }
-      
-      .report-modal-content { 
-        margin: 2% auto;
-        padding: 20px; 
-        width: 95%;
-        max-width: 400px;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- 사이드바 -->
-  <div class="sidebar">
-    <div class="logo">Daily Log</div>
-    <div class="user">
-      <div th:if="${currentUser != null and currentUser.profileImg != null}" class="avatar">
-        <img th:src="@{${currentUser.profileImg}}" alt="프로필"/>
-      </div>
-      <div th:if="${currentUser != null and currentUser.profileImg == null}" class="default-avatar"
-           th:text="${currentUser.nickname.substring(0,1)}">?</div>
-      <div th:if="${currentUser == null}" class="default-avatar">?</div>
-      <div>
-        <div th:text="${currentUser != null ? currentUser.nickname : '게스트'}">사용자명</div>
-        <div style="font-size:13px;color:#888;">
-        </div>
-      </div>
-    </div>
-    <ul>
-      <li><a th:href="@{/}">홈</a></li>
-      <li><a th:href="@{/posts}">글 목록</a></li>
-      <li><a th:href="@{/notifications}">알림</a></li>
-      <li><a th:href="@{/friends}">친구 목록</a></li>
-      <li><a th:href="@{/chat}">채팅</a></li>
-      <li><a th:href="@{/shorts}">숏폼</a></li>
-      <li><a th:href="@{/subscriptions}">구독 관리</a></li>
-      <li><a th:href="@{/mypage}">내 프로필</a></li>
-      <li><a th:href="@{/setting}">설정</a></li>
-    </ul>
-    <a th:href="@{/posts/new}" class="new-post">새 글 쓰기</a>
-    <div class="logout" onclick="location.href='/logout'">로그아웃</div>
-    <button class="toggle-theme" onclick="toggleTheme()">🌙</button>
-  </div>
-
-  <!-- 메인 컨텐츠 -->
-  <div class="main-content">
-    <div class="container">
-      <div class="header">
-        <h1><i class="fas fa-heart"></i> 맞팔로우 피드</h1>
-        <p>서로 팔로우한 친구들과 나의 게시글을 확인해보세요</p>
-      </div>
-
-      <div th:if="${#lists.isEmpty(posts)}" class="no-posts">
-        <i class="fas fa-users"></i>
-        <h3>아직 맞팔로우한 친구들의 게시글이 없어요</h3>
-        <p>친구들이 게시글을 올리면 여기에 표시됩니다</p>
-      </div>
-
-      <div th:each="post : ${posts}" class="post-card">
-        <!-- 신고 버튼 추가 -->
-        <button th:if="${currentUser != null}" 
-                class="report-btn" 
-                th:attr="data-post-id=${post.id},data-author=${post.authorNickname}"
-                onclick="openReportModal(this)"
-                title="신고하기">
-          <i class="fas fa-flag"></i>
-        </button>
-        
-        <div class="author-info" th:if="${post.authorNickname != null}">
-          <div class="avatar" th:if="${post.authorProfileImg != null}">
-            <img th:src="@{${post.authorProfileImg}}" alt="프로필"/>
-          </div>
-          <div class="avatar" th:if="${post.authorProfileImg == null}"
-               th:text="${post.authorNickname.substring(0,1)}">?</div>
-          <div class="author-details">
-            <h3 th:text="${post.authorNickname}">닉네임</h3>
-            <div class="bio" th:if="${post.authorBio}" th:text="${post.authorBio}">소개</div>
-            <div class="post-time">
-              <i class="fas fa-clock"></i>
-              <span th:text="${post.formattedTime}">시간</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="post-content" th:text="${post.content}">게시글 내용</div>
-
-        <img th:if="${post.imagePath}" th:src="@{${post.imagePath}}"
-             alt="게시글 이미지" class="post-image"/>
-
-        <div th:if="${post.videoPath != null}">
-          <video width="100%" controls style="border-radius:12px;margin-bottom:16px;">
-            <source th:src="@{${post.videoPath}}" type="video/mp4"/>
-            이 브라우저는 video 태그를 지원하지 않습니다.
-          </video>
-        </div>
-
-        <div class="post-actions">
-          <div class="action-buttons">
-            <button th:if="${currentUser != null}"
-                    class="action-btn like-btn"
-                    th:attr="data-post-id=${post.id},data-user-email=${currentUser.email}"
-                    onclick="toggleLike(this)">
-              <i class="far fa-heart"></i>
-              <span th:attr="id='like-count-' + ${post.id}"
-                    th:text="${post.likeCount}">0</span>
-            </button>
-            <span th:if="${currentUser == null}"
-                  class="action-btn" style="opacity:0.5;">
-              <i class="far fa-heart"></i>
-              <span th:text="${post.likeCount}">0</span>
-            </span>
-            <button class="action-btn comment-btn"
-                    onclick="toggleComments(this)">
-              <i class="fas fa-comment"></i>
-              <span th:text="${post.commentCount}">0</span>
-            </button>
-            <button class="action-btn">
-              <i class="fas fa-share"></i> 공유
-            </button>
-          </div>
-        </div>
-
-        <div class="comments-section" style="display:none;">
-          <form th:if="${currentUser != null}"
-                class="comment-form"
-                th:action="@{/comments/{postId}(postId=${post.id})}"
-                method="post">
-            <input type="hidden" name="authorEmail"
-                   th:value="${currentUser.email}"/>
-            <input type="text" name="content"
-                   placeholder="댓글을 입력하세요..." required/>
-            <button type="submit">등록</button>
-          </form>
-          <div th:if="${currentUser == null}"
-               style="text-align:center;color:#888;">
-            댓글을 작성하려면 로그인이 필요합니다.
-          </div>
-          <ul class="comments-list">
-            <li th:each="comment : ${post.comments}"
-                th:text="${comment.author} + ': ' + ${comment.content}">
-              댓글 내용
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 신고 모달 - 간단하게 수정 -->
-  <div id="reportModal" class="report-modal">
-    <div class="report-modal-content">
-      <h3><i class="fas fa-flag"></i> 게시글 신고하기</h3>
-      <p>이 게시글을 신고하는 이유를 선택해주세요.</p>
-      
-      <div class="report-reasons">
-        <label class="report-reason">
-          <input type="radio" name="reportReason" value="spam">
-          <span>스팸 또는 광고</span>
-        </label>
-        <label class="report-reason">
-          <input type="radio" name="reportReason" value="harassment">
-          <span>괴롭힘 또는 혐오 발언</span>
-        </label>
-        <label class="report-reason">
-          <input type="radio" name="reportReason" value="inappropriate">
-          <span>부적절한 콘텐츠</span>
-        </label>
-        <label class="report-reason">
-          <input type="radio" name="reportReason" value="copyright">
-          <span>저작권 침해</span>
-        </label>
-        <label class="report-reason">
-          <input type="radio" name="reportReason" value="false_info">
-          <span>거짓 정보</span>
-        </label>
-        <label class="report-reason">
-          <input type="radio" name="reportReason" value="other">
-          <span>기타</span>
-        </label>
-      </div>
-      
-      <div class="report-buttons">
-        <button class="report-cancel-btn" onclick="closeReportModal()">취소</button>
-        <button class="report-submit-btn" onclick="submitReport()">신고하기</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    let currentReportPostId = null;
-    let currentReportAuthor = null;
-    let currentUserEmail = /*[[${currentUser != null ? currentUser.email : null}]]*/ null;
-
-    // 서버에서 사용자의 좋아요 상태 동기화
-    async function syncLikeStatus() {
-      if (!currentUserEmail) return;
-      
-      try {
-        const response = await fetch(`/api/user/${encodeURIComponent(currentUserEmail)}/likes`);
-        if (!response.ok) throw new Error('Failed to fetch user likes');
-        
-        const userLikes = await response.json();
-        
-        document.querySelectorAll('.like-btn').forEach(btn => {
-          const postId = parseInt(btn.getAttribute('data-post-id'));
-          const serverLiked = userLikes.includes(postId);
-          const localLiked = localStorage.getItem(`like_${currentUserEmail}_${postId}`) === 'true';
-          
-          // 서버 상태로 동기화
-          if (serverLiked !== localLiked) {
-            localStorage.setItem(`like_${currentUserEmail}_${postId}`, serverLiked);
-          }
-          
-          // UI 업데이트
-          if (serverLiked) {
-            btn.classList.add('liked');
-            btn.querySelector('i').className = 'fas fa-heart';
-          } else {
-            btn.classList.remove('liked');
-            btn.querySelector('i').className = 'far fa-heart';
-          }
-        });
-      } catch (error) {
-        console.error('좋아요 상태 동기화 실패:', error);
-        // 동기화 실패 시 로컬스토리지로 복원
-        restoreLikeStatusFromLocal();
-      }
-    }
-
-    // 로컬스토리지에서 좋아요 상태 복원 (백업용)
-    function restoreLikeStatusFromLocal() {
-      if (!currentUserEmail) return;
-      
-      document.querySelectorAll('.like-btn').forEach(btn => {
-        const postId = btn.getAttribute('data-post-id');
-        const key = `like_${currentUserEmail}_${postId}`;
-        
-        if (localStorage.getItem(key) === 'true') {
-          btn.classList.add('liked');
-          btn.querySelector('i').className = 'fas fa-heart';
-        }
-      });
-    }
-
-    // 다크모드 초기화 및 좋아요 상태 동기화
-    document.addEventListener('DOMContentLoaded', function() {
-      // 다크모드 초기화
-      if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark');
-      }
-      
-      // 서버와 좋아요 상태 동기화
-      syncLikeStatus();
-    });
-
-    // 개선된 좋아요 토글 함수
-    function toggleLike(button) {
-      // 중복 클릭 방지
-      if (button.disabled) return;
-      
-      const postId = button.getAttribute('data-post-id');
-      const email = button.getAttribute('data-user-email');
-      
-      if (!email) { 
-        alert('로그인이 필요합니다.'); 
-        return; 
-      }
-      
-      // 버튼 비활성화 및 로딩 표시
-      button.disabled = true;
-      button.classList.add('loading');
-      
-      // 현재 상태 저장 (롤백용)
-      const wasLiked = button.classList.contains('liked');
-      const currentCount = parseInt(document.getElementById(`like-count-${postId}`).innerText);
-      
-      // 낙관적 업데이트 (즉시 UI 변경)
-      button.classList.toggle('liked');
-      const icon = button.querySelector('i');
-      icon.className = button.classList.contains('liked') ? 'fas fa-heart' : 'far fa-heart';
-      document.getElementById(`like-count-${postId}`).innerText = wasLiked ? currentCount - 1 : currentCount + 1;
-      
-      // 서버 요청
-      fetch(`/likes/${postId}?userEmail=${encodeURIComponent(email)}`, { 
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        // 서버 응답이 단순 카운트인지 객체인지 확인
-        let count, isLiked;
-        
-        if (typeof data === 'number') {
-          // 기존 방식: 단순 카운트만 반환
-          count = data;
-          isLiked = button.classList.contains('liked');
-        } else {
-          // 개선된 방식: 카운트와 좋아요 상태 함께 반환
-          count = data.count;
-          isLiked = data.isLiked;
-          
-          // 서버 상태에 따라 UI 재조정
-          if (isLiked) {
-            button.classList.add('liked');
-            icon.className = 'fas fa-heart';
-          } else {
-            button.classList.remove('liked');
-            icon.className = 'far fa-heart';
-          }
-        }
-        
-        // 서버에서 받은 정확한 카운트로 업데이트
-        document.getElementById(`like-count-${postId}`).innerText = count;
-        
-        // 로컬스토리지 업데이트
-        localStorage.setItem(`like_${email}_${postId}`, isLiked);
-      })
-      .catch(err => {
-        console.error('좋아요 처리 오류:', err);
-        
-        // 실패 시 원래 상태로 롤백
-        if (wasLiked) {
-          button.classList.add('liked');
-          icon.className = 'fas fa-heart';
-        } else {
-          button.classList.remove('liked');
-          icon.className = 'far fa-heart';
-        }
-        document.getElementById(`like-count-${postId}`).innerText = currentCount;
-        
-        alert('좋아요 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
-      })
-      .finally(() => {
-        // 버튼 재활성화 및 로딩 제거
-        button.disabled = false;
-        button.classList.remove('loading');
-      });
-    }
-
-    // 댓글 토글
-    function toggleComments(btn) {
-      const sec = btn.closest('.post-card').querySelector('.comments-section');
-      sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
-    }
-
-    // 테마 토글
-    function toggleTheme() {
-      document.body.classList.toggle('dark');
-      localStorage.setItem('theme',
-        document.body.classList.contains('dark') ? 'dark' : 'light'
-      );
-    }
-
-    // 신고 모달 열기
-    function openReportModal(button) {
-      currentReportPostId = button.getAttribute('data-post-id');
-      currentReportAuthor = button.getAttribute('data-author');
-      
-      const modal = document.getElementById('reportModal');
-      modal.style.display = 'flex';
-      modal.classList.add('show');
-      
-      // body 스크롤 방지
-      document.body.style.overflow = 'hidden';
-      
-      // 라디오 버튼 초기화
-      document.querySelectorAll('input[name="reportReason"]').forEach(radio => {
-        radio.checked = false;
-      });
-    }
-
-    // 신고 모달 닫기
-    function closeReportModal() {
-      const modal = document.getElementById('reportModal');
-      modal.style.display = 'none';
-      modal.classList.remove('show');
-      
-      // body 스크롤 복원
-      document.body.style.overflow = 'auto';
-      
-      currentReportPostId = null;
-      currentReportAuthor = null;
-    }
-
-    // 신고 제출
-    function submitReport() {
-      const selectedReason = document.querySelector('input[name="reportReason"]:checked');
-      if (!selectedReason) {
-        alert('신고 사유를 선택해주세요.');
-        return;
-      }
-      
-      const reportData = {
-        postId: currentReportPostId,
-        author: currentReportAuthor,
-        reason: selectedReason.value
-      };
-      
-      // 서버로 신고 데이터 전송
-      fetch('/reports', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(reportData)
-      })
-      .then(response => {
-        if (response.ok) {
-          alert('신고가 접수되었습니다. 검토 후 적절한 조치를 취하겠습니다.');
-          closeReportModal();
-        } else {
-          alert('신고 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('신고 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
-      });
-    }
-
-    // 모달 외부 클릭 시 닫기
-    window.onclick = function(event) {
-      const modal = document.getElementById('reportModal');
-      if (event.target === modal) {
-        closeReportModal();
-      }
-    }
-  </script>
-</body>
-</html>
+	<!DOCTYPE html>
+	<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+	<head>
+	  <meta charset="UTF-8" />
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	  <title>맞팔로우 피드 - Daily Log</title>
+	  <link rel="stylesheet" th:href="@{/css/sidebar.css}">
+	  
+	  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+	  <style>
+	    /* ────────────────────────────────────────────────────────
+	       다크모드 공통
+	    ──────────────────────────────────────────────────────── */
+	    body.dark {
+	      background: #181a1b !important;
+	      color: #e6e6e6 !important;
+	    }
+	    /* ────────────────────────────────────────────────────────
+	       기본 라이트모드
+	    ──────────────────────────────────────────────────────── */
+	    html, body {
+	  height: 100%;
+	  margin: 0;
+	  padding: 0;
+	  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	  color: #333;
+	  background-color: #f0f2f5;
+	  transition: background 0.2s, color 0.2s;
+	}
+	
+	body {
+	  display: flex;
+	  flex-direction: row;
+	  min-height: 100vh;
+	  overflow-x: auto;
+	}
+	
+	
+	    /* ────────────────────────────────────────────────────────
+	       사이드바
+	    ──────────────────────────────────────────────────────── */
+	
+	    /* ────────────────────────────────────────────────────────
+	       메인 컨텐츠
+	    ──────────────────────────────────────────────────────── */
+	    .main-content {
+	      flex: 1; background: #f8f9fa;
+	      padding: 20px; box-sizing: border-box;
+	      overflow-y: auto; min-height: 100vh;
+	      transition: background 0.2s, color 0.2s;
+	    }
+	    body.dark .main-content {
+	      background: #181a1b;
+	    }
+	    .container {
+	      max-width: 600px; margin: 0 auto;
+	    }
+	    .header {
+	      text-align: center; margin-bottom: 30px;
+	      padding: 20px;
+	      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	      border-radius: 20px; color: white;
+	      box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+	    }
+	    .header h1 {
+	      font-size: 2.2rem; margin-bottom: 10px; font-weight: 600;
+	    }
+	    .header p {
+	      font-size: 1rem; opacity: 0.95;
+	    }
+	    .post-card {
+	      background: white; border: 1px solid #e9ecef;
+	      border-radius: 16px; padding: 24px;
+	      margin-bottom: 20px;
+	      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+	      transition: all 0.3s ease;
+	      position: relative;
+	    }
+	    body.dark .post-card {
+	      background: #2a2d31; border-color: #404040;
+	      color: #e6e6e6;
+	    }
+	    .post-card:hover {
+	      transform: translateY(-2px);
+	      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+	    }
+	    .author-info {
+	      display: flex; align-items: center;
+	      margin-bottom: 18px;
+	      padding-bottom: 12px;
+	      border-bottom: 1px solid #f1f3f4;
+	    }
+	    body.dark .author-info {
+	      border-color: #404040;
+	    }
+	    .avatar {
+	      width: 50px; height: 50px; border-radius: 50%;
+	      background: linear-gradient(45deg, #667eea, #764ba2);
+	      display: flex; align-items: center;
+	      justify-content: center; color: white;
+	      font-weight: 600; font-size: 1.1rem; margin-right: 12px;
+	    }
+	    .avatar img {
+	      width: 100%; height: 100%; border-radius: 50%;
+	      object-fit: cover;
+	    }
+	    .author-details {
+	      flex: 1;
+	    }
+	    .author-details h3 {
+	      color: #2c3e50; font-size: 1.1rem; margin-bottom: 4px;
+	      font-weight: 600;
+	    }
+	    body.dark .author-details h3 {
+	      color: #e6e6e6;
+	    }
+	    .author-details .bio {
+	      color: #6c757d; font-size: 0.85rem; margin-bottom: 3px;
+	    }
+	    body.dark .author-details .bio {
+	      color: #aaa;
+	    }
+	    .post-time {
+	      color: #adb5bd; font-size: 0.8rem;
+	      display: flex; align-items: center;
+	    }
+	    body.dark .post-time {
+	      color: #888;
+	    }
+	    .post-content {
+	      color: #495057; line-height: 1.6; font-size: 1rem;
+	      margin-bottom: 16px;
+	    }
+	    body.dark .post-content {
+	      color: #e6e6e6;
+	    }
+	    .post-image {
+	      width: 100%; border-radius: 12px; margin-bottom: 16px;
+	      box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+	    }
+	    .post-actions {
+	      display: flex; justify-content: space-between;
+	      align-items: center; padding-top: 12px;
+	      border-top: 1px solid #f1f3f4;
+	    }
+	    body.dark .post-actions {
+	      border-color: #404040;
+	    }
+	    .action-buttons {
+	      display: flex; gap: 16px;
+	    }
+	    .action-btn {
+	      display: flex; align-items: center; gap: 6px;
+	      padding: 6px 12px; border: none; background: none;
+	      color: #6c757d; cursor: pointer; border-radius: 16px;
+	      transition: all 0.2s ease; font-size: 0.85rem;
+	      position: relative;
+	    }
+	    body.dark .action-btn {
+	      color: #aaa;
+	    }
+	    .action-btn:hover {
+	      background: #f8f9fa; color: #495057;
+	    }
+	    body.dark .action-btn:hover {
+	      background: #404040; color: #e6e6e6;
+	    }
+	    .action-btn.liked {
+	      color: #dc3545;
+	    }
+	    .action-btn:disabled {
+	      opacity: 0.6;
+	      cursor: not-allowed;
+	    }
+	    .action-btn.loading::after {
+	      content: '';
+	      position: absolute;
+	      width: 10px;
+	      height: 10px;
+	      border: 1px solid transparent;
+	      border-top: 1px solid currentColor;
+	      border-radius: 50%;
+	      animation: spin 1s linear infinite;
+	      right: 4px;
+	      top: 50%;
+	      transform: translateY(-50%);
+	    }
+	    @keyframes spin {
+	      0% { transform: translateY(-50%) rotate(0deg); }
+	      100% { transform: translateY(-50%) rotate(360deg); }
+	    }
+	    
+	    /* 신고 버튼 스타일 */
+	    .report-btn {
+	      position: absolute;
+	      top: 20px;
+	      right: 20px;
+	      background: none;
+	      border: none;
+	      color: #6c757d;
+	      cursor: pointer;
+	      padding: 8px;
+	      border-radius: 50%;
+	      transition: all 0.2s ease;
+	      font-size: 16px;
+	    }
+	    .report-btn:hover {
+	      background: #f8f9fa;
+	      color: #dc3545;
+	    }
+	    body.dark .report-btn {
+	      color: #aaa;
+	    }
+	    body.dark .report-btn:hover {
+	      background: #404040;
+	      color: #dc3545;
+	    }
+	    
+	    /* 신고 모달 스타일 - 간단하게 수정 */
+	    .report-modal {
+	      display: none;
+	      position: fixed;
+	      z-index: 1000;
+	      left: 0;
+	      top: 0;
+	      width: 100%;
+	      height: 100%;
+	      background-color: rgba(0,0,0,0.5);
+	      overflow-y: auto;
+	    }
+	    .report-modal.show {
+	      display: flex;
+	      align-items: flex-start;
+	      justify-content: center;
+	      padding: 20px;
+	      box-sizing: border-box;
+	    }
+	    .report-modal-content {
+	      background-color: #fefefe;
+	      margin: 5% auto;
+	      padding: 30px;
+	      border-radius: 16px;
+	      width: 90%;
+	      max-width: 450px;
+	      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+	      position: relative;
+	    }
+	    body.dark .report-modal-content {
+	      background-color: #2a2d31;
+	      color: #e6e6e6;
+	    }
+	    .report-modal h3 {
+	      margin-top: 0;
+	      color: #dc3545;
+	      font-size: 1.3rem;
+	      margin-bottom: 20px;
+	    }
+	    .report-reasons {
+	      margin: 20px 0;
+	    }
+	    .report-reason {
+	      display: block;
+	      margin: 12px 0;
+	      cursor: pointer;
+	      padding: 12px;
+	      border-radius: 8px;
+	      transition: background 0.2s;
+	      border: 1px solid #e9ecef;
+	    }
+	    .report-reason:hover {
+	      background: #f8f9fa;
+	      border-color: #dc3545;
+	    }
+	    body.dark .report-reason {
+	      border-color: #404040;
+	    }
+	    body.dark .report-reason:hover {
+	      background: #404040;
+	      border-color: #dc3545;
+	    }
+	    .report-reason input {
+	      margin-right: 10px;
+	    }
+	    .report-buttons {
+	      display: flex;
+	      gap: 10px;
+	      justify-content: flex-end;
+	      margin-top: 30px;
+	    }
+	    .report-submit-btn, .report-cancel-btn {
+	      padding: 12px 24px;
+	      border: none;
+	      border-radius: 8px;
+	      cursor: pointer;
+	      font-size: 14px;
+	      transition: all 0.2s;
+	      font-weight: 500;
+	    }
+	    .report-submit-btn {
+	      background: #dc3545;
+	      color: white;
+	    }
+	    .report-submit-btn:hover {
+	      background: #c82333;
+	    }
+	    .report-cancel-btn {
+	      background: #6c757d;
+	      color: white;
+	    }
+	    .report-cancel-btn:hover {
+	      background: #545b62;
+	    }
+	    
+	    .no-posts {
+	      text-align: center; padding: 60px 20px;
+	      background: white; border: 1px solid #e9ecef;
+	      border-radius: 16px;
+	    }
+	    body.dark .no-posts {
+	      background: #2a2d31; border-color: #404040;
+	      color: #e6e6e6;
+	    }
+	    .no-posts i {
+	      font-size: 3.5rem; color: #dee2e6; margin-bottom: 16px;
+	    }
+	    body.dark .no-posts i {
+	      color: #555;
+	    }
+	    .no-posts h3 {
+	      color: #6c757d; margin-bottom: 8px; font-weight: 500;
+	    }
+	    body.dark .no-posts h3 {
+	      color: #aaa;
+	    }
+	    .no-posts p {
+	      color: #adb5bd; font-size: 0.9rem;
+	    }
+	    body.dark .no-posts p {
+	      color: #888;
+	    }
+	
+	    /* 댓글 */
+	    .comments-section {
+	      margin-top: 16px; padding-top: 16px;
+	      border-top: 1px solid #f1f3f4;
+	    }
+	    body.dark .comments-section {
+	      border-color: #404040;
+	    }
+	    .comment-form {
+	      display: flex; gap: 8px; margin-bottom: 16px;
+	    }
+	    .comment-form input {
+	      flex: 1; padding: 8px 12px;
+	      border: 1px solid #ddd; border-radius: 20px;
+	      outline: none;
+	      transition: background 0.2s, border-color 0.2s, color 0.2s;
+	    }
+	    body.dark .comment-form input {
+	      background: #2a2d31; border-color: #404040; color: #e6e6e6;
+	    }
+	    .comment-form button {
+	      padding: 8px 16px; background: #667eea;
+	      color: white; border: none; border-radius: 20px;
+	      cursor: pointer;
+	    }
+	    .comments-list {
+	      list-style: none; padding: 0;
+	    }
+	    .comments-list li {
+	      padding: 8px 0; border-bottom: 1px solid #f8f9fa;
+	      font-size: 0.9rem;
+	    }
+	    body.dark .comments-list li {
+	      border-color: #404040; color: #e6e6e6;
+	    }
+	    .comments-list li:last-child {
+	      border-bottom: none;
+	    }
+	
+	    @media (max-width:768px) {
+	      body { flex-direction: column; }
+	      .sidebar { width: 100%; }
+	      .main-content { padding: 15px; }
+	      .header h1 { font-size:1.8rem; }
+	      .post-card { padding:20px; margin-bottom:16px; }  
+	      .action-buttons { gap:12px; }
+	      
+	      .report-modal-content { 
+	        margin: 2% auto;
+	        padding: 20px; 
+	        width: 95%;
+	        max-width: 400px;
+	      }
+	    }
+	  </style>
+	</head>
+	<body>
+	
+	  <!-- 사이드바 -->
+	  <div class="sidebar">
+	  <div class="logo">AskMyFriend</div>
+	  <ul class="nav-menu">
+	    <li class="nav-item">
+	      <a th:href="@{/}" class="nav-link" data-path="/">
+	        <i class="fas fa-home"></i><span>홈</span>
+	      </a>
+	    </li>
+	    <li class="nav-item">
+	      <a th:href="@{/posts}" class="nav-link" data-path="/posts">
+	        <i class="fas fa-list"></i><span>글 목록</span>
+	      </a>
+	    </li>
+	    <li class="nav-item">
+	      <a th:href="@{/notifications}" class="nav-link" data-path="/notifications">
+	        <i class="fas fa-bell"></i><span>알림</span>
+	      </a>
+	    </li>
+	    <li class="nav-item">
+	      <a th:href="@{/shorts}" class="nav-link" data-path="/shorts">
+	        <i class="fas fa-bolt"></i><span>숏폼</span>
+	      </a>
+	    </li>
+	    <li class="nav-item">
+	      <a th:href="@{/chat}" class="nav-link" data-path="/chat">
+	        <i class="fas fa-comments"></i><span>채팅</span>
+	      </a>
+	    </li>
+	    <li class="nav-item">
+	      <a th:href="@{/mypage}" class="nav-link" data-path="/mypage">
+	        <i class="fas fa-user"></i><span>내 프로필</span>
+	      </a>
+	    </li>
+	  </ul>
+	
+	  <button type="button"
+	          class="new-post-btn"
+	          th:onclick="|location.href='@{/posts/new}'|">
+	    새 글쓰기
+	  </button>
+	
+	  <div class="profile-section">
+	    <div class="profile-dropdown">
+	      <a th:href="@{/mypage}" class="dropdown-link">
+	        <i class="fas fa-user"></i><span>내 프로필</span>
+	      </a>
+	      <a th:href="@{/setting}" class="dropdown-link">
+	        <i class="fas fa-cog"></i><span>설정</span>
+	      </a>
+	      <a th:href="@{/logout}" class="dropdown-link">
+	        <i class="fas fa-sign-out-alt"></i><span>로그아웃</span>
+	      </a>
+	    </div>
+	    <div class="profile-display">
+	      <img th:src="${user != null and user.profileImg != null ? user.profileImg : '/default-avatar.png'}"
+	           alt="프로필 이미지" class="profile-img"/>
+	      <span class="profile-name"
+	            th:text="${user != null ? user.nickname : '사용자 이름'}">
+	        사용자 이름
+	      </span>
+	    </div>
+	  </div>
+	</div>
+	
+	  <!-- 메인 컨텐츠 -->
+	  <div class="main-content">
+	    <div class="container">
+	      <div class="header">
+	        <h1><i class="fas fa-heart"></i> 맞팔로우 피드</h1>
+	        <p>서로 팔로우한 친구들과 나의 게시글을 확인해보세요</p>
+	      </div>
+	
+	      <div th:if="${#lists.isEmpty(posts)}" class="no-posts">
+	        <i class="fas fa-users"></i>
+	        <h3>아직 맞팔로우한 친구들의 게시글이 없어요</h3>
+	        <p>친구들이 게시글을 올리면 여기에 표시됩니다</p>
+	      </div>
+	
+	      <div th:each="post : ${posts}" class="post-card">
+	        <!-- 신고 버튼 추가 -->
+	        <button th:if="${currentUser != null}" 
+	                class="report-btn" 
+	                th:attr="data-post-id=${post.id},data-author=${post.authorNickname}"
+	                onclick="openReportModal(this)"
+	                title="신고하기">
+	          <i class="fas fa-flag"></i>
+	        </button>
+	        
+	        <div class="author-info" th:if="${post.authorNickname != null}">
+	          <div class="avatar" th:if="${post.authorProfileImg != null}">
+	            <img th:src="@{${post.authorProfileImg}}" alt="프로필"/>
+	          </div>
+	          <div class="avatar" th:if="${post.authorProfileImg == null}"
+	               th:text="${post.authorNickname.substring(0,1)}">?</div>
+	          <div class="author-details">
+	            <h3 th:text="${post.authorNickname}">닉네임</h3>
+	            <div class="bio" th:if="${post.authorBio}" th:text="${post.authorBio}">소개</div>
+	            <div class="post-time">
+	              <i class="fas fa-clock"></i>
+	              <span th:text="${post.formattedTime}">시간</span>
+	            </div>
+	          </div>
+	        </div>
+	
+	        <div class="post-content" th:text="${post.content}">게시글 내용</div>
+	
+	        <div th:if="${post.imagePath != null}">
+  <img th:each="imgPath : ${#strings.arraySplit(post.imagePath, ';')}"
+       th:src="@{${imgPath}}"
+       alt="게시글 이미지"
+       class="post-image"/>
+</div>
+	
+	        <div th:if="${post.videoPath != null}">
+	          <video width="100%" controls style="border-radius:12px;margin-bottom:16px;">
+	            <source th:src="@{${post.videoPath}}" type="video/mp4"/>
+	            이 브라우저는 video 태그를 지원하지 않습니다.
+	          </video>
+	        </div>
+	
+	        <div class="post-actions">
+	          <div class="action-buttons">
+	            <button th:if="${currentUser != null}"
+	                    class="action-btn like-btn"
+	                    th:attr="data-post-id=${post.id},data-user-email=${currentUser.email}"
+	                    onclick="toggleLike(this)">
+	              <i class="far fa-heart"></i>
+	              <span th:attr="id='like-count-' + ${post.id}"
+	                    th:text="${post.likeCount}">0</span>
+	            </button>
+	            <span th:if="${currentUser == null}"
+	                  class="action-btn" style="opacity:0.5;">
+	              <i class="far fa-heart"></i>
+	              <span th:text="${post.likeCount}">0</span>
+	            </span>
+	            <button class="action-btn comment-btn"
+	                    onclick="toggleComments(this)">
+	              <i class="fas fa-comment"></i>
+	              <span th:text="${post.commentCount}">0</span>
+	            </button>
+	            <button class="action-btn">
+	              <i class="fas fa-share"></i> 공유
+	            </button>
+	          </div>
+	        </div>
+	
+	        <div class="comments-section" style="display:none;">
+	          <form th:if="${currentUser != null}"
+	                class="comment-form"
+	                th:action="@{/comments/{postId}(postId=${post.id})}"
+	                method="post">
+	            <input type="hidden" name="authorEmail"
+	                   th:value="${currentUser.email}"/>
+	            <input type="text" name="content"
+	                   placeholder="댓글을 입력하세요..." required/>
+	            <button type="submit">등록</button>
+	          </form>
+	          <div th:if="${currentUser == null}"
+	               style="text-align:center;color:#888;">
+	            댓글을 작성하려면 로그인이 필요합니다.
+	          </div>
+	          <ul class="comments-list">
+	            <li th:each="comment : ${post.comments}"
+	                th:text="${comment.author} + ': ' + ${comment.content}">
+	              댓글 내용
+	            </li>
+	          </ul>
+	        </div>
+	      </div>
+	    </div>
+	  </div>
+	
+	  <!-- 신고 모달 - 간단하게 수정 -->
+	  <div id="reportModal" class="report-modal">
+	    <div class="report-modal-content">
+	      <h3><i class="fas fa-flag"></i> 게시글 신고하기</h3>
+	      <p>이 게시글을 신고하는 이유를 선택해주세요.</p>
+	      
+	      <div class="report-reasons">
+	        <label class="report-reason">
+	          <input type="radio" name="reportReason" value="spam">
+	          <span>스팸 또는 광고</span>
+	        </label>
+	        <label class="report-reason">
+	          <input type="radio" name="reportReason" value="harassment">
+	          <span>괴롭힘 또는 혐오 발언</span>
+	        </label>
+	        <label class="report-reason">
+	          <input type="radio" name="reportReason" value="inappropriate">
+	          <span>부적절한 콘텐츠</span>
+	        </label>
+	        <label class="report-reason">
+	          <input type="radio" name="reportReason" value="copyright">
+	          <span>저작권 침해</span>
+	        </label>
+	        <label class="report-reason">
+	          <input type="radio" name="reportReason" value="false_info">
+	          <span>거짓 정보</span>
+	        </label>
+	        <label class="report-reason">
+	          <input type="radio" name="reportReason" value="other">
+	          <span>기타</span>
+	        </label>
+	      </div>
+	      
+	      <div class="report-buttons">
+	        <button class="report-cancel-btn" onclick="closeReportModal()">취소</button>
+	        <button class="report-submit-btn" onclick="submitReport()">신고하기</button>
+	      </div>
+	    </div>
+	  </div>
+	
+	  <script>
+	    let currentReportPostId = null;
+	    let currentReportAuthor = null;
+	    let currentUserEmail = /*[[${currentUser != null ? currentUser.email : null}]]*/ null;
+	
+	    // 서버에서 사용자의 좋아요 상태 동기화
+	    async function syncLikeStatus() {
+	      if (!currentUserEmail) return;
+	      
+	      try {
+	        const response = await fetch(`/api/user/${encodeURIComponent(currentUserEmail)}/likes`);
+	        if (!response.ok) throw new Error('Failed to fetch user likes');
+	        
+	        const userLikes = await response.json();
+	        
+	        document.querySelectorAll('.like-btn').forEach(btn => {
+	          const postId = parseInt(btn.getAttribute('data-post-id'));
+	          const serverLiked = userLikes.includes(postId);
+	          const localLiked = localStorage.getItem(`like_${currentUserEmail}_${postId}`) === 'true';
+	          
+	          // 서버 상태로 동기화
+	          if (serverLiked !== localLiked) {
+	            localStorage.setItem(`like_${currentUserEmail}_${postId}`, serverLiked);
+	          }
+	          
+	          // UI 업데이트
+	          if (serverLiked) {
+	            btn.classList.add('liked');
+	            btn.querySelector('i').className = 'fas fa-heart';
+	          } else {
+	            btn.classList.remove('liked');
+	            btn.querySelector('i').className = 'far fa-heart';
+	          }
+	        });
+	      } catch (error) {
+	        console.error('좋아요 상태 동기화 실패:', error);
+	        // 동기화 실패 시 로컬스토리지로 복원
+	        restoreLikeStatusFromLocal();
+	      }
+	    }
+	
+	    // 로컬스토리지에서 좋아요 상태 복원 (백업용)
+	    function restoreLikeStatusFromLocal() {
+	      if (!currentUserEmail) return;
+	      
+	      document.querySelectorAll('.like-btn').forEach(btn => {
+	        const postId = btn.getAttribute('data-post-id');
+	        const key = `like_${currentUserEmail}_${postId}`;
+	        
+	        if (localStorage.getItem(key) === 'true') {
+	          btn.classList.add('liked');
+	          btn.querySelector('i').className = 'fas fa-heart';
+	        }
+	      });
+	    }
+	
+	    // 다크모드 초기화 및 좋아요 상태 동기화
+	    document.addEventListener('DOMContentLoaded', function() {
+	      // 다크모드 초기화
+	      if (localStorage.getItem('theme') === 'dark') {
+	        document.body.classList.add('dark');
+	      }
+	      
+	      // 서버와 좋아요 상태 동기화
+	      syncLikeStatus();
+	    });
+	
+	    // 개선된 좋아요 토글 함수
+	    function toggleLike(button) {
+	      // 중복 클릭 방지
+	      if (button.disabled) return;
+	      
+	      const postId = button.getAttribute('data-post-id');
+	      const email = button.getAttribute('data-user-email');
+	      
+	      if (!email) { 
+	        alert('로그인이 필요합니다.'); 
+	        return; 
+	      }
+	      
+	      // 버튼 비활성화 및 로딩 표시
+	      button.disabled = true;
+	      button.classList.add('loading');
+	      
+	      // 현재 상태 저장 (롤백용)
+	      const wasLiked = button.classList.contains('liked');
+	      const currentCount = parseInt(document.getElementById(`like-count-${postId}`).innerText);
+	      
+	      // 낙관적 업데이트 (즉시 UI 변경)
+	      button.classList.toggle('liked');
+	      const icon = button.querySelector('i');
+	      icon.className = button.classList.contains('liked') ? 'fas fa-heart' : 'far fa-heart';
+	      document.getElementById(`like-count-${postId}`).innerText = wasLiked ? currentCount - 1 : currentCount + 1;
+	      
+	      // 서버 요청
+	      fetch(`/likes/${postId}?userEmail=${encodeURIComponent(email)}`, { 
+	        method: 'POST',
+	        headers: {
+	          'Content-Type': 'application/json'
+	        }
+	      })
+	      .then(res => {
+	        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+	        return res.json();
+	      })
+	      .then(data => {
+	        // 서버 응답이 단순 카운트인지 객체인지 확인
+	        let count, isLiked;
+	        
+	        if (typeof data === 'number') {
+	          // 기존 방식: 단순 카운트만 반환
+	          count = data;
+	          isLiked = button.classList.contains('liked');
+	        } else {
+	          // 개선된 방식: 카운트와 좋아요 상태 함께 반환
+	          count = data.count;
+	          isLiked = data.isLiked;
+	          
+	          // 서버 상태에 따라 UI 재조정
+	          if (isLiked) {
+	            button.classList.add('liked');
+	            icon.className = 'fas fa-heart';
+	          } else {
+	            button.classList.remove('liked');
+	            icon.className = 'far fa-heart';
+	          }
+	        }
+	        
+	        // 서버에서 받은 정확한 카운트로 업데이트
+	        document.getElementById(`like-count-${postId}`).innerText = count;
+	        
+	        // 로컬스토리지 업데이트
+	        localStorage.setItem(`like_${email}_${postId}`, isLiked);
+	      })
+	      .catch(err => {
+	        console.error('좋아요 처리 오류:', err);
+	        
+	        // 실패 시 원래 상태로 롤백
+	        if (wasLiked) {
+	          button.classList.add('liked');
+	          icon.className = 'fas fa-heart';
+	        } else {
+	          button.classList.remove('liked');
+	          icon.className = 'far fa-heart';
+	        }
+	        document.getElementById(`like-count-${postId}`).innerText = currentCount;
+	        
+	        alert('좋아요 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+	      })
+	      .finally(() => {
+	        // 버튼 재활성화 및 로딩 제거
+	        button.disabled = false;
+	        button.classList.remove('loading');
+	      });
+	    }
+	
+	    // 댓글 토글
+	    function toggleComments(btn) {
+	      const sec = btn.closest('.post-card').querySelector('.comments-section');
+	      sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+	    }
+	
+	    // 테마 토글
+	    function toggleTheme() {
+	      document.body.classList.toggle('dark');
+	      localStorage.setItem('theme',
+	        document.body.classList.contains('dark') ? 'dark' : 'light'
+	      );
+	    }
+	
+	    // 신고 모달 열기
+	    function openReportModal(button) {
+	      currentReportPostId = button.getAttribute('data-post-id');
+	      currentReportAuthor = button.getAttribute('data-author');
+	      
+	      const modal = document.getElementById('reportModal');
+	      modal.style.display = 'flex';
+	      modal.classList.add('show');
+	      
+	      // body 스크롤 방지
+	      document.body.style.overflow = 'hidden';
+	      
+	      // 라디오 버튼 초기화
+	      document.querySelectorAll('input[name="reportReason"]').forEach(radio => {
+	        radio.checked = false;
+	      });
+	    }
+	
+	    // 신고 모달 닫기
+	    function closeReportModal() {
+	      const modal = document.getElementById('reportModal');
+	      modal.style.display = 'none';
+	      modal.classList.remove('show');
+	      
+	      // body 스크롤 복원
+	      document.body.style.overflow = 'auto';
+	      
+	      currentReportPostId = null;
+	      currentReportAuthor = null;
+	    }
+	
+	    // 신고 제출
+	    function submitReport() {
+	      const selectedReason = document.querySelector('input[name="reportReason"]:checked');
+	      if (!selectedReason) {
+	        alert('신고 사유를 선택해주세요.');
+	        return;
+	      }
+	      
+	      const reportData = {
+	        postId: currentReportPostId,
+	        author: currentReportAuthor,
+	        reason: selectedReason.value
+	      };
+	      
+	      // 서버로 신고 데이터 전송
+	      fetch('/reports', {
+	        method: 'POST',
+	        headers: {
+	          'Content-Type': 'application/json',
+	        },
+	        body: JSON.stringify(reportData)
+	      })
+	      .then(response => {
+	        if (response.ok) {
+	          alert('신고가 접수되었습니다. 검토 후 적절한 조치를 취하겠습니다.');
+	          closeReportModal();
+	        } else {
+	          alert('신고 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+	        }
+	      })
+	      .catch(error => {
+	        console.error('Error:', error);
+	        alert('신고 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+	      });
+	    }
+	
+	    // 모달 외부 클릭 시 닫기
+	    window.onclick = function(event) {
+	      const modal = document.getElementById('reportModal');
+	      if (event.target === modal) {
+	        closeReportModal();
+	      }
+	    }
+	  </script>
+	  <script>
+	  document.addEventListener('DOMContentLoaded', () => {
+	    const profileDisplay = document.querySelector('.profile-display');
+	    const profileSection = document.querySelector('.profile-section');
+	
+	    if (profileDisplay && profileSection) {
+	      profileDisplay.addEventListener('click', () => {
+	        profileSection.classList.toggle('show');
+	      });
+	
+	      document.addEventListener('click', function(e) {
+	        if (!profileSection.contains(e.target)) {
+	          profileSection.classList.remove('show');
+	        }
+	      });
+	    }
+	  });
+	</script>
+	  <script>
+	  document.addEventListener('DOMContentLoaded', () => {
+	    const currentPath = window.location.pathname;
+	    document.querySelectorAll('.nav-link').forEach(link => {
+	      const path = link.getAttribute('data-path');
+	      if (currentPath === path || currentPath.startsWith(path + "/")) {
+	        link.classList.add('active');
+	      }
+	    });
+	  });
+	</script>
+	  
+	  
+	</body>
+	</html>

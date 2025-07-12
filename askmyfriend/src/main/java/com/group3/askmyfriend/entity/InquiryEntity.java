@@ -1,16 +1,17 @@
-package com.group3.askmyfriend.entity;
+package com.group3.askmyfriend.entity; // ✅ 이 줄을 InquiryEntity.java 제일 위에 추가
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Setter // ✅ 이거 하나로 아래 setter 전부 자동 생성됨
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class InquiryEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

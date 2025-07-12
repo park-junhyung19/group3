@@ -4,12 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Shorts - Daily Log</title>
+  <!-- head 태그에 공통 css 적용 -->
+<link rel="stylesheet" th:href="@{/css/sidebar.css}">
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
     /* 기본 레이아웃 - 사이드바 + 메인 */
     html, body {
       height: 100%; margin: 0; padding: 0;
-      font-family: Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: #f8f9fa;
       transition: background 0.2s, color 0.2s;
     }
@@ -19,135 +22,7 @@
       transition: background 0.2s, color 0.2s;
     }
 
-    /* 🔥 사용자 프로필이 표시되는 사이드바 */
-    .sidebar {
-      width: 220px;
-      background: #fff;
-      border-right: 1px solid #eee;
-      padding: 24px 0 0 0;
-      box-sizing: border-box;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      height: 100vh;
-      transition: background 0.2s, color 0.2s;
-    }
-    .sidebar .logo {
-      font-weight: bold;
-      margin-left: 24px;
-      margin-bottom: 32px;
-      font-size: 18px;
-    }
-    .sidebar .user {
-      display: flex;
-      align-items: center;
-      margin-bottom: 32px;
-      margin-left: 24px;
-    }
-    .sidebar .user img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      margin-right: 12px;
-    }
-    .sidebar .user .default-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: linear-gradient(45deg, #667eea, #764ba2);
-      margin-right: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-    }
-    .sidebar ul {
-      list-style: none;
-      padding: 0;
-      margin: 0 0 4px 24px;
-    }
-    .sidebar ul li {
-      margin-bottom: 20px;
-      color: #333;
-      font-size: 16px;
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-    /* 사이드바 링크 밑줄 제거 */
-    .sidebar ul li a {
-      color: inherit;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .sidebar ul li a:hover {
-      color: #4f46e5;
-    }
-    /* 설정 아래 구분선 */
-    .sidebar ul li:last-child {
-      position: relative;
-      padding-bottom: 4px;
-    }
-    .sidebar ul li:last-child::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: -5px;
-      height: 1px;
-      background: linear-gradient(to right, #e0e0e0 20%, #e0e0e0 80%, transparent);
-    }
-    /* 새 글 쓰기 버튼 */
-    .sidebar .new-post {
-      display: block;
-      margin-left: 24px;
-      margin-bottom: 20px;
-      padding: 0;
-      background: none;
-      color: #333;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      text-decoration: none;
-      text-align: left;
-      transition: color 0.2s;
-    }
-    .sidebar .new-post:hover {
-      color: #4f46e5;
-    }
-    /* 다크모드 토글 */
-    .toggle-theme {
-      margin-left: 24px;
-      margin-bottom: 20px;
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      color: #888;
-      padding: 0;
-      transition: all 0.2s ease;
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-    }
-    .toggle-theme:hover {
-      color: #333;
-    }
-    /* 로그아웃 */
-    .sidebar .logout {
-      margin-left: 24px;
-      color: #888;
-      font-size: 16px;
-      cursor: pointer;
-      margin-bottom: 20px;
-      transition: color 0.2s;
-    }
-    .sidebar .logout:hover {
-      color: #4f46e5;
-    }
+    
 
     /* 메인 컨텐츠 영역 - Shorts */
     .shorts-main {
@@ -890,40 +765,75 @@
         max-width: 400px;
       }
     }
+    
   </style>
 </head>
 <body>
 
   <!-- 🔥 사용자 프로필이 표시되는 사이드바 -->
-  <div class="sidebar">
-    <div class="logo">Daily Log</div>
-    <div class="user">
-      <img th:if="${user != null and user.profileImg != null}" 
-           th:src="@{${user.profileImg}}" 
-           alt="User" />
-      <div th:if="${user == null or user.profileImg == null}" 
-           class="default-avatar">
-        <span th:text="${user != null ? user.nickname.substring(0,1).toUpperCase() : '?'}">?</span>
-      </div>
-      <div>
-        <div th:text="${user != null ? user.nickname : '사용자명'}">사용자명</div>
-      </div>
+<div class="sidebar">
+  <div class="logo">AskMyFriend</div>
+  <ul class="nav-menu">
+    <li class="nav-item">
+      <a th:href="@{/}" class="nav-link" data-path="/">
+        <i class="fas fa-home"></i><span>홈</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a th:href="@{/posts}" class="nav-link" data-path="/posts">
+        <i class="fas fa-list"></i><span>글 목록</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a th:href="@{/notifications}" class="nav-link" data-path="/notifications">
+        <i class="fas fa-bell"></i><span>알림</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a th:href="@{/shorts}" class="nav-link" data-path="/shorts">
+        <i class="fas fa-bolt"></i><span>숏폼</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a th:href="@{/chat}" class="nav-link" data-path="/chat">
+        <i class="fas fa-comments"></i><span>채팅</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a th:href="@{/mypage}" class="nav-link" data-path="/mypage">
+        <i class="fas fa-user"></i><span>내 프로필</span>
+      </a>
+    </li>
+  </ul>
+
+  <button type="button"
+          class="new-post-btn"
+          th:onclick="|location.href='@{/posts/new}'|">
+    새 글쓰기
+  </button>
+
+  <div class="profile-section">
+    <div class="profile-dropdown">
+      <a th:href="@{/mypage}" class="dropdown-link">
+        <i class="fas fa-user"></i><span>내 프로필</span>
+      </a>
+      <a th:href="@{/setting}" class="dropdown-link">
+        <i class="fas fa-cog"></i><span>설정</span>
+      </a>
+      <a th:href="@{/logout}" class="dropdown-link">
+        <i class="fas fa-sign-out-alt"></i><span>로그아웃</span>
+      </a>
     </div>
-    <ul>
-      <li><a th:href="@{/}">홈</a></li>
-      <li><a th:href="@{/posts}">글 목록</a></li>
-      <li><a th:href="@{/notifications}">알림</a></li>
-      <li><a th:href="@{/friends}">친구 목록</a></li>
-      <li><a th:href="@{/chat}">채팅</a></li>
-      <li><a th:href="@{/shorts}">숏폼</a></li>
-      <li><a th:href="@{/subscriptions}">구독 관리</a></li>
-      <li><a th:href="@{/mypage}">내 프로필</a></li>
-      <li><a th:href="@{/setting}">설정</a></li>
-    </ul>
-    <a th:href="@{/posts/new}" class="new-post">새 글 쓰기</a>
-    <div class="logout" onclick="location.href='/logout'">로그아웃</div>
-    <button class="toggle-theme" onclick="toggleTheme()">🌙</button>
+    <div class="profile-display">
+      <img th:src="${user != null and user.profileImg != null ? user.profileImg : '/default-avatar.png'}"
+           alt="프로필 이미지" class="profile-img"/>
+      <span class="profile-name"
+            th:text="${user != null ? user.nickname : '사용자 이름'}">
+        사용자 이름
+      </span>
+    </div>
   </div>
+</div>
 
   <!-- 메인 컨텐츠 - Shorts -->
   <div class="shorts-main">
@@ -1711,5 +1621,35 @@
         await loadNext();
     }
   </script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const profileDisplay = document.querySelector('.profile-display');
+    const profileSection = document.querySelector('.profile-section');
+
+    if (profileDisplay && profileSection) {
+      profileDisplay.addEventListener('click', () => {
+        profileSection.classList.toggle('show');
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!profileSection.contains(e.target)) {
+          profileSection.classList.remove('show');
+        }
+      });
+    }
+  });
+</script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.nav-link').forEach(link => {
+      const path = link.getAttribute('data-path');
+      if (currentPath === path || currentPath.startsWith(path + "/")) {
+        link.classList.add('active');
+      }
+    });
+  });
+</script>
+  
 </body>
 </html>

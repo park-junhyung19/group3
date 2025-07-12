@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구독 관리 - Daily Log</title>
+    <title>구독 관리 - AskMyFriend</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
     <style>
         * {
             margin: 0;
@@ -23,111 +25,160 @@
             transition: background 0.2s, color 0.2s;
         }
 
-        /* 🔥 paste-2.txt의 사이드바 그대로 복사 */
+        /* ✨ 새로운 사이드바 스타일 (이전에 제공된 notifications.html의 사이드바 스타일 기반) ✨ */
         .sidebar {
-            width: 220px; background: #fff;
-            border-right: 1px solid #eee;
-            padding: 24px 0 0 0;
-            box-sizing: border-box;
-            flex-shrink: 0; display: flex;
-            flex-direction: column;
-            min-height: 100vh; height: 100vh;
-            transition: background 0.2s, color 0.2s;
-        }
-        .sidebar .logo {
-            font-weight: bold;
-            margin-left: 24px;
-            margin-bottom: 32px;
-            font-size: 18px;
-        }
-        .sidebar .user {
-            display: flex; align-items: center;
-            margin-bottom: 32px;
-            margin-left: 24px;
-        }
-        .sidebar .user img {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            margin-right: 12px;
-        }
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 4px 24px;
-        }
-        .sidebar ul li {
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .sidebar ul li a {
-            color: inherit;
-            text-decoration: none;
-        }
-        
-        /* 설정 아래 구분선 - 간격 대폭 축소 */
-        .sidebar ul li:last-child {
-            position: relative;
-            padding-bottom: 4px;
-        }
-        
-        .sidebar ul li:last-child::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: -5px;
-            height: 1px;
-            background: linear-gradient(to right, #e0e0e0 20%, #e0e0e0 80%, transparent);
-        }
-        
-        /* 새 글 쓰기 버튼 - 간격 통일 */
-        .sidebar .new-post {
-            display: block;
-            margin-left: 24px;
-            margin-bottom: 20px;
-            padding: 0;
-            background: none;
-            color: #333;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: left;
-        }
-        
-        /* 다크모드 토글 - 간격 통일 */
-        .toggle-theme {
-            margin-left: 24px;
-            margin-bottom: 20px;
-            background: none;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            color: #888;
-            padding: 0;
-            transition: all 0.2s ease;
-            width: 24px;
-            height: 24px;
             display: flex;
-            align-items: center;
-            justify-content: flex-start;
-        }
-        
-        .toggle-theme:hover {
-            color: #333;
-        }
-        
-        /* 로그아웃 - 간격 통일 */
-        .sidebar .logout {
-            margin-left: 24px;
-            color: #888;
-            font-size: 16px;
-            cursor: pointer;
-            margin-bottom: 20px;
+            flex-direction: column; /* 자식 요소들을 세로로 배치 */
+            justify-content: space-between; /* 로고/메뉴와 하단 섹션을 상하 끝으로 분리 */
+            height: 100vh; /* 뷰포트 높이 전체 */
+            width: 250px; /* 사이드바 너비 */
+            background-color: #ffffff; /* 사이드바 배경색 */
+            border-right: 1px solid #e0e0e0; /* 오른쪽 테두리 */
+            padding: 20px; /* 사이드바 내부 여백 */
+            box-sizing: border-box; /* 패딩을 너비에 포함 */
+            flex-shrink: 0; /* 컨텐츠가 줄어들 때 사이드바 너비 유지 */
         }
 
+        .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #1877f2;
+            padding-bottom: 20px;
+            text-align: center;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1; /* 메뉴가 남은 공간을 차지하여 sidebar-bottom을 아래로 밀어냄 */
+        }
+
+        .nav-item {
+            margin-bottom: 5px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 8px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .nav-link i {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .nav-link.active {
+            background-color: #e6f7ff;
+            color: #1877f2;
+            font-weight: bold;
+        }
+
+        .nav-link:hover:not(.active) {
+            background-color: #f0f2f5;
+        }
+
+        /* 사이드바 하단 섹션 (버튼 및 프로필) 스타일 */
+        .sidebar-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 0;
+            width: 100%;
+            box-sizing: border-box;
+            /* 기본적으로 겹침을 유발하는 속성 제거/재정의 */
+            margin-top: 0 !important;
+            top: auto !important;
+            transform: none !important;
+            position: relative; /* 자식 드롭다운을 위한 position */
+        }
+
+        /* 새 글쓰기 버튼 스타일 */
+        .new-post-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* 프로필 섹션 (드롭다운 포함) 스타일 */
+        .profile-section {
+            position: relative; /* 드롭다운 메뉴 위치 지정을 위해 유지 */
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* 프로필 이미지와 이름 표시 스타일 */
+        .profile-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+            text-align: left;
+            background-color: transparent;
+        }
+        .profile-display:hover {
+            background-color: #f0f2f5;
+        }
+
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .profile-name {
+            font-weight: bold;
+            font-size: 15px;
+            color: #333;
+        }
+
+        /* 프로필 드롭다운 메뉴 스타일 */
+        .profile-dropdown {
+            display: none;
+            position: absolute;
+            bottom: 100%; /* .profile-display 바로 위에 나타나도록 */
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            z-index: 10;
+        }
+        .profile-section.show .profile-dropdown {
+            display: block;
+        }
+        .dropdown-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            gap: 10px;
+            font-size: 14px;
+            color: #333;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .dropdown-link:hover {
+            background-color: #f0f2f5;
+        }
+        
         /* 메인 컨텐츠 */
         .container {
             flex: 1;
@@ -396,25 +447,124 @@
             background: #1a1c1e;
             border-right: 1px solid #222;
         }
-        body.dark .sidebar ul li,
         body.dark .sidebar .logo,
-        body.dark .sidebar .logout,
-        body.dark .sidebar .new-post {
+        body.dark .sidebar .profile-name,
+        body.dark .sidebar .nav-link,
+        body.dark .sidebar .new-post-btn,
+        body.dark .sidebar .dropdown-link {
+            color: #e6e6e6; /* 다크모드 텍스트 색상 */
+        }
+
+        body.dark .sidebar .nav-link:hover:not(.active) {
+            background-color: #23272a;
+        }
+        body.dark .sidebar .nav-link.active {
+            background-color: #2a2d31;
+            color: #a78bfa; /* 다크모드 활성 링크 색상 */
+        }
+        body.dark .sidebar .profile-display:hover {
+            background-color: #23272a;
+        }
+        body.dark .sidebar .profile-dropdown {
+            background-color: #1a1c1e;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        body.dark .sidebar .profile-dropdown .dropdown-link:hover {
+            background-color: #23272a;
+        }
+        body.dark .sidebar .profile-img {
+            border: 3px solid #1a1c1e;
+        }
+        body.dark .sidebar .default-avatar {
+            background: #404040;
+            color: #ccc;
+        }
+        body.dark .sidebar .new-post-btn {
+            background-color: #6d28d9; /* Darker purple for dark mode button */
+        }
+        body.dark .sidebar .new-post-btn:hover {
+            background-color: #5b21b6;
+        }
+        /* 다크모드에서 각 탭의 텍스트 색상 */
+        body.dark .tabs .tab {
+            color: #aaa;
+            background: #2a2d31;
+            border-bottom-color: #404040;
+        }
+        body.dark .tabs .tab.active {
+            background: #32363a;
+            color: #8b5cf6;
+            border-bottom-color: #8b5cf6;
+        }
+        body.dark .tabs .tab:hover:not(.active) {
+            background: #23272a;
+        }
+
+        body.dark .search-box {
+            background: #2a2d31;
+            border-color: #404040;
             color: #e6e6e6;
         }
-        
-        /* 다크모드 설정 구분선 */
-        body.dark .sidebar ul li:last-child::after {
-            background: linear-gradient(to right, #404040 20%, #404040 80%, transparent);
+        body.dark .search-box::placeholder {
+            color: #aaa;
         }
-        
-        /* 다크모드 토글 버튼 */
-        body.dark .toggle-theme {
+        body.dark .search-box:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+        body.dark .search-icon {
+            color: #aaa;
+        }
+
+        body.dark .subscription-list {
+            background: #1a1c1e;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        body.dark .subscription-item {
+            border-bottom-color: #222;
+        }
+        body.dark .subscription-item:hover {
+            background-color: #23272a;
+        }
+        body.dark .user-name {
             color: #e6e6e6;
         }
-        
-        body.dark .toggle-theme:hover {
-            color: #fff;
+        body.dark .user-stats,
+        body.dark .stat-item {
+            color: #aaa;
+        }
+        body.dark .avatar {
+            border-color: #1a1c1e;
+        }
+
+        body.dark .stats-summary {
+            background: #1a1c1e;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        body.dark .stat-number {
+            color: #a78bfa;
+        }
+        body.dark .stat-label {
+            color: #aaa;
+        }
+
+        body.dark .empty-state {
+            color: #aaa;
+        }
+        body.dark .empty-state i {
+            color: #404040;
+        }
+        body.dark .empty-state h3 {
+            color: #e6e6e6;
+        }
+        body.dark .empty-state p {
+            color: #aaa;
+        }
+
+        /* 다크모드 토스트 메시지 */
+        body.dark #toast {
+            background: #6d28d9;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -474,41 +624,59 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
+    </head>
 <body>
-    <!-- paste-2.txt의 사이드바 그대로 복사 -->
     <div class="sidebar">
-        <div class="logo">Daily Log</div>
-        <div class="user">
-            <img th:src="${user != null and user.profileImg != null ? user.profileImg : '/default-avatar.png'}" alt="User" />
-            <div>
-                <div th:text="${user != null ? user.nickname : '사용자명'}">사용자명</div>
+        <div>
+            <div class="logo">AskMyFriend</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a th:href="@{/}" class="nav-link" data-path="/">
+                        <i class="fas fa-home"></i><span>홈</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a th:href="@{/friends}" class="nav-link" data-path="/friends">
+                        <i class="fas fa-user-friends"></i><span>친구</span>
+                    </a>
+                </li>
+                 <li class="nav-item">
+                    <a th:href="@{/subscriptions}" class="nav-link" data-path="/subscriptions">
+                        <i class="fas fa-rss"></i>
+                        <span>구독 관리</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/mypage}" class="nav-link" data-path="/mypage">
+                        <i class="fas fa-user"></i><span>내 프로필</span>
+                    </a>
+                
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom">
+            <button type="button" class="new-post-btn" th:onclick="|location.href='@{/posts/new}'|">새 글쓰기</button>
+
+            <div class="profile-section" id="sidebarProfile">
+                <div class="profile-dropdown">
+                    <a th:href="@{/mypage}" class="dropdown-link"><i class="fas fa-user"></i><span>내 프로필</span></a>
+                    <a th:href="@{/setting}" class="dropdown-link"><i class="fas fa-cog"></i><span>설정</span></a>
+                    <a th:href="@{/logout}" class="dropdown-link"><i class="fas fa-sign-out-alt"></i><span>로그아웃</span></a>
+                </div>
+                <div class="profile-display">
+                    <img th:src="${user != null and user.profileImg != null ? user.profileImg : '/default-avatar.png'}" alt="프로필 이미지" class="profile-img" />
+                    <span class="profile-name" th:text="${user != null ? user.nickname : '사용자 이름'}">사용자 이름</span>
+                </div>
             </div>
         </div>
-        <ul>
-            <li><a th:href="@{/}">홈</a></li>
-            <li><a th:href="@{/posts}">글 목록</a></li>
-            <li><a th:href="@{/notifications}">알림</a></li>
-            <li><a th:href="@{/friends}">친구 목록</a></li>
-            <li><a th:href="@{/chat}">채팅</a></li>
-            <li><a th:href="@{/shorts}">숏폼</a></li>
-            <li><a th:href="@{/subscriptions}">구독 관리</a></li>
-            <li><a th:href="@{/mypage}">내 프로필</a></li>
-            <li><a th:href="@{/setting}">설정</a></li>
-        </ul>
-        <a th:href="@{/posts/new}" class="new-post">새 글 쓰기</a>
-        <div class="logout" onclick="location.href='/logout'">로그아웃</div>
-        <button class="toggle-theme" onclick="toggleTheme()">🌙</button>
     </div>
 
-    <!-- 메인 컨텐츠 -->
     <div class="container">
         <div class="header">
             <h1>구독 관리</h1>
         </div>
 
-        <!-- 통계 요약 -->
         <div class="stats-summary">
             <div class="stat-card">
                 <div class="stat-number" th:text="${subscribedChannels?.size() ?: 0}">0</div>
@@ -520,7 +688,6 @@
             </div>
         </div>
 
-        <!-- 탭 네비게이션 -->
         <div class="tabs">
             <button class="tab active" onclick="showTab('subscribed')">
                 구독한 채널
@@ -530,7 +697,6 @@
             </button>
         </div>
 
-        <!-- 구독한 채널 탭 -->
         <div id="subscribed-tab" class="tab-content active">
             <div class="search-container">
                 <i class="fas fa-search search-icon"></i>
@@ -540,9 +706,9 @@
 
             <div class="subscription-list" th:if="${subscribedChannels != null and !#lists.isEmpty(subscribedChannels)}">
                 <div class="subscription-item" th:each="channel : ${subscribedChannels}">
-                    <img th:src="${channel.profileImg != null ? channel.profileImg : '/static/img/default-avatar.png'}" 
+                    <img th:src="${channel.profileImg != null ? channel.profileImg : '/default-avatar.png'}" 
                          alt="프로필" class="avatar"
-                         onerror="this.src='/static/img/default-avatar.png'">
+                         onerror="this.src='/default-avatar.png'">
                     
                     <div class="user-info">
                         <div class="user-name" th:text="${channel.nickname}">채널명</div>
@@ -568,7 +734,6 @@
                 </div>
             </div>
 
-            <!-- 빈 상태 -->
             <div class="subscription-list" th:if="${subscribedChannels == null or #lists.isEmpty(subscribedChannels)}">
                 <div class="empty-state">
                     <i class="fas fa-heart"></i>
@@ -578,7 +743,6 @@
             </div>
         </div>
 
-        <!-- 구독자 탭 -->
         <div id="subscribers-tab" class="tab-content">
             <div class="search-container">
                 <i class="fas fa-search search-icon"></i>
@@ -588,9 +752,9 @@
 
             <div class="subscription-list" th:if="${mySubscribers != null and !#lists.isEmpty(mySubscribers)}">
                 <div class="subscription-item" th:each="subscriber : ${mySubscribers}">
-                    <img th:src="${subscriber.profileImg != null ? subscriber.profileImg : '/static/img/default-avatar.png'}" 
+                    <img th:src="${subscriber.profileImg != null ? subscriber.profileImg : '/default-avatar.png'}" 
                          alt="프로필" class="avatar"
-                         onerror="this.src='/static/img/default-avatar.png'">
+                         onerror="this.src='/default-avatar.png'">
                     
                     <div class="user-info">
                         <div class="user-name" th:text="${subscriber.nickname}">구독자명</div>
@@ -606,7 +770,6 @@
                 </div>
             </div>
 
-            <!-- 빈 상태 -->
             <div class="subscription-list" th:if="${mySubscribers == null or #lists.isEmpty(mySubscribers)}">
                 <div class="empty-state">
                     <i class="fas fa-users"></i>
@@ -630,6 +793,32 @@
             const saved = localStorage.getItem('theme');
             if (saved === 'dark') {
                 document.body.classList.add('dark');
+            }
+            
+            // 초기 로드 시 현재 경로에 따라 사이드바 링크 활성화
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const path = link.getAttribute('data-path');
+                if (currentPath === path || currentPath.startsWith(path + "/")) {
+                    link.classList.add('active');
+                }
+            });
+
+            // 프로필 드롭다운 토글 기능 추가
+            const profileDisplay = document.querySelector('.profile-display');
+            const sidebarProfile = document.querySelector('#sidebarProfile'); // ID 선택자 사용
+
+            if (profileDisplay && sidebarProfile) {
+                profileDisplay.addEventListener('click', (event) => {
+                    event.stopPropagation(); // 이벤트 버블링 방지
+                    sidebarProfile.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (sidebarProfile && !sidebarProfile.contains(e.target)) {
+                        sidebarProfile.classList.remove('show');
+                    }
+                });
             }
         });
 
@@ -665,7 +854,11 @@
                 content.classList.remove('active');
             });
             
-            event.target.classList.add('active');
+            // 클릭된 탭 버튼을 활성화
+            const clickedTab = event.target;
+            clickedTab.classList.add('active');
+
+            // 해당 탭의 콘텐츠를 활성화
             document.getElementById(tabName + '-tab').classList.add('active');
         }
 
@@ -722,6 +915,7 @@
         // 토스트 메시지 함수
         function showToast(message) {
             const toast = document.createElement('div');
+            toast.id = 'toast'; /* 다크모드 스타일 적용을 위한 ID 추가 */
             toast.style.cssText = `
                 position: fixed; top: 20px; right: 20px; 
                 background: #8b5cf6; color: white; 

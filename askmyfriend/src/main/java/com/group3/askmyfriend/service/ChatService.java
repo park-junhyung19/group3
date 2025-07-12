@@ -330,5 +330,12 @@ public class ChatService {
     public void reportChatMessage(ChatReportRequestDto dto, Long reporterId) {
         chatReportService.reportMessage(dto, reporterId);
     }
+    public List<ChatMessageDTO> getAllChatMessages() {
+        return chatMessageRepository
+            .findAllByIsDeletedFalseOrderBySentAtDesc()   // 리포지토리 메서드 사용
+            .stream()
+            .map(ChatMessageDTO::new)
+            .collect(Collectors.toList());
+    }
 
 }		

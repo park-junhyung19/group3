@@ -4,6 +4,7 @@ import com.group3.askmyfriend.dto.PostDto;
 import com.group3.askmyfriend.dto.CommentDto;
 import com.group3.askmyfriend.entity.PostEntity;
 import com.group3.askmyfriend.entity.UserEntity;
+import com.group3.askmyfriend.entity.CommentEntity;
 import com.group3.askmyfriend.repository.LikeRepository;
 import com.group3.askmyfriend.repository.CommentRepository;
 import com.group3.askmyfriend.repository.PostRepository;
@@ -54,6 +55,124 @@ public class PostController {
 
     @Autowired
     private LikeService likeService;
+
+    // ⭐️ 게시물 상세보기 (템플릿 경로 수정)
+    @GetMapping("/{postId}")
+    public String getPostDetail(@PathVariable Long postId, Model model, @AuthenticationPrincipal CustomUser user) {
+        try {
+            System.out.println("=== 게시물 상세보기 ===");
+            System.out.println("게시물 ID: " + postId);
+            
+            PostEntity post = postService.findById(postId);
+            
+            // PostEntity를 PostDto로 변환
+            PostDto postDto = new PostDto();
+            postDto.setId(post.getId());
+            postDto.setContent(post.getContent());
+            postDto.setVisibility(post.getVisibility());
+            postDto.setPlatform(post.getPlatform());
+            postDto.setAccessibility(post.getAccessibility());
+            postDto.setImagePath(post.getImagePath());
+            postDto.setVideoPath(post.getVideoPath());
+            postDto.setLikeCount(likeRepository.countByPost(post));
+            postDto.setCommentCount(commentRepository.findByPost(post).size());
+            postDto.setShortForm(post.isShortForm());
+            postDto.setFormattedTime(formatRelativeTime(post.getCreatedAt()));
+            
+            // 작성자 정보 추가
+            if (post.getAuthor() != null) {
+                postDto.setAuthorId(post.getAuthor().getUserId());
+                postDto.setAuthorNickname(post.getAuthor().getNickname());
+                postDto.setAuthorProfileImg(post.getAuthor().getProfileImg());
+                postDto.setAuthorBio(post.getAuthor().getBio());
+                System.out.println("작성자: " + post.getAuthor().getNickname());
+            } else {
+                System.out.println("작성자 정보 없음");
+            }
+            
+            // 댓글 목록 추가
+            List<CommentDto> commentDtos = post.getComments().stream()
+                    .map(comment -> {
+                        CommentDto commentDto = new CommentDto();
+                        commentDto.setId(comment.getId());
+                        commentDto.setPostId(post.getId());
+                        commentDto.setContent(comment.getContent());
+                        commentDto.setCreatedAt(comment.getCreatedAt());
+                        if (comment.getAuthor() != null) {
+                            commentDto.setAuthor(comment.getAuthor().getNickname());
+                        } else {
+                            commentDto.setAuthor("익명");
+                        }
+                        return commentDto;
+                    })
+                    .collect(Collectors.toList());
+            
+            postDto.setComments(commentDtos);
+            System.out.println("댓글 수: " + commentDtos.size());
+            
+            // 현재 사용자 정보
+            if (user != null) {
+                UserEntity currentUser = userService.findByLoginId(user.getUsername()).orElse(null);
+                model.addAttribute("currentUser", currentUser);
+                System.out.println("현재 사용자: " + user.getUsername());
+            }
+            
+            model.addAttribute("post", postDto);
+            System.out.println("템플릿 반환: post_detail");
+            return "post_detail"; // ⭐️ post_detail.html 템플릿 사용
+            
+        } catch (Exception e) {
+            System.err.println("게시물 상세보기 오류: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/";
+        }
+    }
+
+    // ⭐️ 댓글 작성 처리 메서드 추가
+    @PostMapping("/{postId}/comment")
+    public String addComment(@PathVariable Long postId, 
+                           @RequestParam String content,
+                           Principal principal) {
+        try {
+            System.out.println("=== 댓글 작성 시도 ===");
+            System.out.println("게시물 ID: " + postId + ", 내용: " + content);
+            
+            if (principal == null) {
+                System.out.println("로그인되지 않은 사용자");
+                return "redirect:/login";
+            }
+            
+            // 현재 사용자 정보 가져오기
+            UserEntity currentUser = userService.findByLoginId(principal.getName()).orElse(null);
+            if (currentUser == null) {
+                System.out.println("사용자를 찾을 수 없음: " + principal.getName());
+                return "redirect:/login";
+            }
+            
+            // 게시물 정보 가져오기
+            PostEntity post = postService.findById(postId);
+            
+            // 댓글 생성
+            CommentEntity comment = new CommentEntity();
+            comment.setContent(content);
+            comment.setPost(post);
+            comment.setAuthor(currentUser);
+            comment.setCreatedAt(LocalDateTime.now());
+            
+            // 댓글 저장
+            commentRepository.save(comment);
+            
+            System.out.println("댓글 작성 완료 - 게시물 ID: " + postId + ", 작성자: " + currentUser.getNickname());
+            
+            // 게시물 상세 페이지로 리다이렉트
+            return "redirect:/posts/" + postId;
+            
+        } catch (Exception e) {
+            System.err.println("댓글 작성 오류: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/posts/" + postId;
+        }
+    }
 
     // 게시물 목록 - 맞팔로우 필터링 적용
     @GetMapping
@@ -141,7 +260,7 @@ public class PostController {
     public ResponseEntity<Map<String, Object>> toggleLike(
             @PathVariable Long postId,
             Principal principal) {
-
+        
         if (principal == null) {
             return ResponseEntity.status(401).body(Map.of("error", "로그인이 필요합니다."));
         }

@@ -1,0 +1,72 @@
+<!-- src/main/resources/templates/sidebar.html -->
+<!-- 순수 fragment 정의만 -->
+<div th:fragment="sidebar">
+  <div class="sidebar">
+    <div class="logo">AskMyFriend</div>
+    <ul class="nav-menu">
+      <li class="nav-item">
+        <a th:href="@{/}" class="nav-link"
+           th:classappend="${#request.requestURI == '/'}? ' active'">
+          <i class="fas fa-home"></i><span>홈</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/posts}" class="nav-link"
+           th:classappend="${#request.requestURI.startsWith('/posts')}? ' active'">
+          <i class="fas fa-list"></i><span>글 목록</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/notifications}" class="nav-link"
+           th:classappend="${#request.requestURI.startsWith('/notifications')}? ' active'">
+          <i class="fas fa-bell"></i><span>알림</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/shorts}" class="nav-link"
+           th:classappend="${#request.requestURI.startsWith('/shorts')}? ' active'">
+          <i class="fas fa-bolt"></i><span>숏폼</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/chat}" class="nav-link"
+           th:classappend="${#request.requestURI.startsWith('/chat')}? ' active'">
+          <i class="fas fa-comments"></i><span>채팅</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/mypage}" class="nav-link"
+           th:classappend="${#request.requestURI.startsWith('/mypage')}? ' active'">
+          <i class="fas fa-user"></i><span>내 프로필</span>
+        </a>
+      </li>
+    </ul>
+    <button type="button"
+            class="new-post-btn"
+            th:onclick="|location.href='@{/posts/new}'|">
+      새 글쓰기
+    </button>
+
+    <div class="profile-section">
+      <div class="profile-dropdown">
+        <a th:href="@{/mypage}" class="dropdown-link">
+          <i class="fas fa-user"></i><span>내 프로필</span>
+        </a>
+        <a th:href="@{/setting}" class="dropdown-link">
+          <i class="fas fa-cog"></i><span>설정</span>
+        </a>
+        <a th:href="@{/logout}" class="dropdown-link">
+          <i class="fas fa-sign-out-alt"></i><span>로그아웃</span>
+        </a>
+      </div>
+      <div class="profile-display">
+        <img th:src="${user != null and user.profileImg != null ? user.profileImg : '/default-avatar.png'}"
+             alt="프로필 이미지" class="profile-img"/>
+        <span class="profile-name"
+              th:text="${user != null ? user.nickname : '사용자 이름'}">
+          사용자 이름
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

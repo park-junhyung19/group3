@@ -1,4 +1,4 @@
-	package com.group3.askmyfriend.service;
+package com.group3.askmyfriend.service;
 
 import java.util.Optional;
 
@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.group3.askmyfriend.dto.SignupDTO;
+import com.group3.askmyfriend.entity.InquiryEntity;
 import com.group3.askmyfriend.entity.UserEntity;
+import com.group3.askmyfriend.repository.InquiryRepository;
 import com.group3.askmyfriend.repository.UserRepository;
 
 import jakarta.persistence.EntityManager;
@@ -19,14 +21,18 @@ import jakarta.persistence.PersistenceContext;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final InquiryRepository inquiryRepository; // ✅ 추가
     private final BCryptPasswordEncoder passwordEncoder;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Autowired
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository,
+                       InquiryRepository inquiryRepository, // ✅ 생성자 주입
+                       BCryptPasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.inquiryRepository = inquiryRepository; // ✅ 할당
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -67,6 +73,18 @@ public class UserService {
         return userRepository.findByLoginId(loginId);
     }
 
+    /**
+     * 로그인 ID로 회원을 찾아 저장된 해시된 비밀번호와 입력받은 rawPassword를 비교하여 결과 반환
+     */
+    public boolean checkPassword(String loginId, String rawPassword) {
+        Optional<UserEntity> opt = userRepository.findByLoginId(loginId);
+        if (opt.isEmpty()) {
+            throw new IllegalArgumentException("사용자 정보가 없습니다.");
+        }
+        String encoded = opt.get().getPassword();
+        return passwordEncoder.matches(rawPassword, encoded);
+    }
+
     @Transactional
     public void updateEmail(Long userId, String newEmail) {
         UserEntity user = userRepository.findById(userId)
@@ -95,7 +113,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
-    
+
     public UserEntity validateLogin(String loginId, String rawPassword) {
         UserEntity user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
@@ -111,7 +129,6 @@ public class UserService {
         return user;
     }
 
-
     @Transactional
     public void updatePhone(Long userId, String newPhone) {
         UserEntity user = userRepository.findById(userId)
@@ -126,5 +143,11 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
         user.setStatus(status);
         userRepository.save(user);
+    }
+
+    // ✅ 문의 저장 메서드 추가
+    @Transactional
+    public void submitInquiry(InquiryEntity inquiry) {
+        inquiryRepository.save(inquiry);
     }
 }
