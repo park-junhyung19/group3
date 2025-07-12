@@ -1,4 +1,4 @@
-# Miscellaneous
+# ── Miscellaneous ───────────────────────────
 *.class
 *.log
 *.pyc
@@ -12,18 +12,16 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
+# ── IntelliJ / Android Studio ──────────────
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# ── VS Code (필요 시 주석 해제) ─────────────
+# .vscode/
 
-# Flutter/Dart/Pub related
+# ── Flutter / Dart / Pub related ────────────
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
@@ -31,15 +29,39 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
+# Flutter 최상위 빌드 아티팩트
 /build/
 
-# Symbolication related
-app.*.symbols
+# ── Android Gradle build 산출물 ────────────
+# 전체 Android Gradle 캐시
+/android/.gradle/
+# Android 모듈별 build 폴더 (app/build 포함)
+**/android/**/build/
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
 
-# Obfuscation related
+# ── iOS 빌드 산출물 ────────────────────────
+ios/Pods/
+ios/Runner/Flutter.framework/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/ServiceDefinitions.json
+
+# ── 심볼/맵/난독화 산출물 ───────────────────
+app.*.symbols
 app.*.map.json
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# ── 기타 IDE / 툴 ───────────────────────────
+**/build/
+*.lock
+*.keystore
+
+# ── 추가로 무시할 수 있는 예시 ───────────────
+# macOS
+.DS_Store
+# Windows thumbnail cache
+Thumbs.db
+# Linux trash folder
+.Trash-*/
+
