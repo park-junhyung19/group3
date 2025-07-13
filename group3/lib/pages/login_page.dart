@@ -26,7 +26,7 @@ class _LoginPageState extends State<LoginPage> {
     });
     print('로그인 버튼 클릭됨!');
 
-    final url = Uri.parse('http://172.31.98.235:8080/api/auth/login');
+    final url = Uri.parse('http://192.168.0.53:8080/api/auth/login');
     final headers = {
       "Content-Type": "application/json",
       "Accept": "application/json",
@@ -166,15 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                     Expanded(child: Divider()),
                   ],
                 ),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.g_mobiledata),
-                  label: const Text('Google 로그인'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
-                ),
+               
                 const SizedBox(height: 18),
                 ElevatedButton(
                   onPressed: () {

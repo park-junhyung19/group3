@@ -7,7 +7,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:http/http.dart' as http;
 import 'app_drawer.dart';  // 같은 lib/pages/ 폴더 내이므로 상대경로로
 
-const String baseUrl = 'http://172.31.98.235:8080';
+const String baseUrl = 'http://192.168.0.53:8080';
 
 class IndexPage extends StatefulWidget {
   const IndexPage({Key? key}) : super(key: key);
@@ -19,6 +19,8 @@ class IndexPage extends StatefulWidget {
 class _IndexPageState extends State<IndexPage> {
   final _storage = const FlutterSecureStorage();
   String _userId = '...';
+    String _nickname = '...'; // ✅ 이 줄 추가
+
   String _profileRawPath = ''; // 서버가 내려주는 rawPath, 예: "/uploads/abc.jpg"
 
   @override
@@ -52,9 +54,10 @@ class _IndexPageState extends State<IndexPage> {
     if (resp.statusCode == 200) {
       final data = json.decode(resp.body) as Map<String, dynamic>;
       setState(() {
-        _profileRawPath = data['profileImg'] as String? ?? '';
-        _userId = _userId;  // userId는 변함 없음
-      });
+  _profileRawPath = data['profileImg'] as String? ?? '';
+  final rawNickname = data['nickname'] as String? ?? '';
+  _nickname = rawNickname.isNotEmpty ? rawNickname : _userId;
+});
       debugPrint('✅ 로그인 사용자: $_userId, rawPath: $_profileRawPath');
     } else {
       debugPrint('⚠️ 프로필 API 실패: ${resp.statusCode}');
@@ -77,7 +80,7 @@ class _IndexPageState extends State<IndexPage> {
       ),
       drawer: AppDrawer(
         currentRoute: '/index',
-        userId: _userId,
+  nickname: _nickname,        // ✅ 닉네임 변수로 전달
         profileImg: _profileRawPath,  // rawPath 그대로 전달
       ),
       body: Column(

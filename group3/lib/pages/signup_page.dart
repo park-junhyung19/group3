@@ -10,7 +10,6 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  // 입력값 컨트롤러
   final idController = TextEditingController();
   final emailController = TextEditingController();
   final pwController = TextEditingController();
@@ -35,21 +34,20 @@ class _SignupPageState extends State<SignupPage> {
         pwConfirmController.text.isEmpty ||
         nameController.text.isEmpty ||
         nicknameController.text.isEmpty) {
-      print('입력값 누락!');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("모든 필수 항목을 입력하세요.")),
       );
       return;
     }
+
     if (pwController.text != pwConfirmController.text) {
-      print('비밀번호 불일치!');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("비밀번호가 일치하지 않습니다.")),
       );
       return;
     }
+
     if (!agree1 || !agree2) {
-      print('필수 약관 미동의!');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("필수 약관에 동의해야 합니다.")),
       );
@@ -60,45 +58,40 @@ class _SignupPageState extends State<SignupPage> {
       isLoading = true;
     });
 
-    final url = Uri.parse('http://172.31.98.241:8080/api/auth/signup');
+    final url = Uri.parse('http://192.168.0.53:8080/api/auth/signup');
     final headers = {
       "Content-Type": "application/json",
       "Accept": "application/json",
     };
-
     final body = jsonEncode({
-      "loginId": idController.text,
-      "userName": nameController.text,
-      "password": pwController.text,
-      "passwordConfirm": pwConfirmController.text,
-      "email": emailController.text,
-      "nickname": nicknameController.text,
-      "phone": phoneController.text,
+      "loginId": idController.text.trim(),
+      "userName": nameController.text.trim(),
+      "password": pwController.text.trim(),
+      "passwordConfirm": pwConfirmController.text.trim(),
+      "email": emailController.text.trim(),
+      "nickname": nicknameController.text.trim(),
+      "phone": phoneController.text.trim(),
     });
 
-    print("회원가입 요청 전송! body: $body");
-
     try {
-      print("http.post 실행 직전!");
+      print("회원가입 요청 전송: $body");
       final response = await http.post(url, headers: headers, body: body);
 
-      print('서버 응답 코드: ${response.statusCode}');
-      print('서버 응답 바디: ${response.body}');
+      print('응답 코드: ${response.statusCode}');
+      print('응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
-        print("회원가입 성공!");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("회원가입 성공!")),
         );
         Navigator.pushReplacementNamed(context, '/auth/login');
       } else {
-        print("회원가입 실패: ${response.body}");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("회원가입 실패: ${response.body}")),
         );
       }
     } catch (e) {
-      print("예외 발생: $e");
+      print('❌ 예외 발생: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("서버 연결 실패")),
       );
@@ -129,16 +122,17 @@ class _SignupPageState extends State<SignupPage> {
                 const Text(
                   '빠르고 쉽게 가입할 수 있습니다.',
                   style: TextStyle(fontSize: 16),
-                  textAlign: TextAlign.left,
                 ),
                 const SizedBox(height: 18),
                 _buildTextField('ID', '아이디를 입력하세요', controller: idController),
                 const SizedBox(height: 16),
                 _buildTextField('이메일', '이메일 주소를 입력하세요', controller: emailController),
                 const SizedBox(height: 16),
-                _buildTextField('비밀번호', '비밀번호를 입력하세요', obscure: true, controller: pwController),
+                _buildTextField('비밀번호', '비밀번호를 입력하세요',
+                    obscure: true, controller: pwController),
                 const SizedBox(height: 16),
-                _buildTextField('비밀번호 확인', '비밀번호를 다시 입력하세요', obscure: true, controller: pwConfirmController),
+                _buildTextField('비밀번호 확인', '비밀번호를 다시 입력하세요',
+                    obscure: true, controller: pwConfirmController),
                 const SizedBox(height: 16),
                 _buildTextField('이름', '이름을 입력하세요', controller: nameController),
                 const SizedBox(height: 16),
@@ -147,19 +141,11 @@ class _SignupPageState extends State<SignupPage> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildTextField('휴대폰 번호 (선택)', '예: 010-1234-5678', controller: phoneController),
+                      child: _buildTextField('휴대폰 번호 (선택)', '예: 010-1234-5678',
+                          controller: phoneController),
                     ),
                     const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        // 인증번호 발송 로직 필요시 구현
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1877F2),
-                        minimumSize: const Size(110, 48),
-                      ),
-                      child: const Text('인증번호 받기'),
-                    ),
+                   
                   ],
                 ),
                 const SizedBox(height: 18),
@@ -195,18 +181,12 @@ class _SignupPageState extends State<SignupPage> {
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('가입하기', style: TextStyle(fontSize: 18)),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/auth/login');
-                  },
-                  child: const Text("로그인 화면으로 이동 테스트"),
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 TextButton(
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/auth/login');
                   },
-                  child: const Text('이미 계정이 있으신가요?'),
+                  child: const Text('이미 계정이 있으신가요? 로그인하기'),
                 ),
               ],
             ),
@@ -216,7 +196,8 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Widget _buildTextField(String label, String hint, {bool obscure = false, TextEditingController? controller}) {
+  Widget _buildTextField(String label, String hint,
+      {bool obscure = false, TextEditingController? controller}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -229,7 +210,8 @@ class _SignupPageState extends State<SignupPage> {
             hintText: hint,
             border: const OutlineInputBorder(),
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
           ),
         ),
       ],

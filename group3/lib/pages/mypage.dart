@@ -7,7 +7,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:http/http.dart' as http;
 import 'app_drawer.dart';  // 같은 lib/pages/ 폴더 내이므로 상대경로로
 
-const String baseUrl = 'http://172.31.98.235:8080';
+const String baseUrl = 'http://192.168.0.53:8080'; // IP 주소 환경에 맞게 수정
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -21,6 +21,8 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
   final _storage = const FlutterSecureStorage();
 
   String _userId = '...';
+    String _nickname = '...'; // ✅ 이 줄 추가
+
   String _profileRawPath = ''; // 서버에서 넘어오는 "/uploads/xxx.jpg"
 
   @override
@@ -40,25 +42,34 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     final token = await _storage.read(key: 'jwt');
     if (token == null) return;
 
-    // JWT에서 sub 추출
     try {
       final decoded = JwtDecoder.decode(token);
-      _userId = decoded['sub'] as String? ?? '...';
-    } catch (_) {}
+      final userId = decoded['sub'] as String? ?? '...';
 
-    // 프로필 API 호출
-    final resp = await http.get(
-      Uri.parse('$baseUrl/api/users/me'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-    if (resp.statusCode == 200) {
-      final data = json.decode(resp.body) as Map<String, dynamic>;
-      setState(() {
-        _profileRawPath = data['profileImg'] as String? ?? '';
-      });
+      final resp = await http.get(
+        Uri.parse('$baseUrl/api/users/me'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (resp.statusCode == 200) {
+        final data = json.decode(resp.body) as Map<String, dynamic>;
+       setState(() {
+  _profileRawPath = data['profileImg'] as String? ?? '';
+  final rawNickname = data['nickname'] as String? ?? '';
+  _nickname = rawNickname.isNotEmpty ? rawNickname : _userId;
+});
+
+      } else {
+        setState(() {
+          _userId = userId;
+          _profileRawPath = '';
+        });
+      }
+    } catch (e) {
+      print("❌ 사용자 정보 불러오기 실패: $e");
     }
   }
 
@@ -72,7 +83,7 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
     return Scaffold(
       drawer: AppDrawer(
         currentRoute: '/mypage',
-        userId: _userId,
+  nickname: _nickname,             // 오류 해결됨
         profileImg: _profileRawPath,
       ),
       appBar: AppBar(title: const Text('내 프로필')),
@@ -101,21 +112,17 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                     backgroundColor: Colors.white,
                     backgroundImage: _profileRawPath.isNotEmpty
                         ? NetworkImage(_resolveImageUrl(_profileRawPath))
-                        : const AssetImage(
-                            'assets/Screenshot_20250625_034855_KakaoStory1.jpg')
-                            as ImageProvider,
+                        : const AssetImage('assets/Screenshot_20250625_034855_KakaoStory1.jpg') as ImageProvider,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 70),
-            // 닉네임 & 소개 & 버튼
             Column(
               children: [
                 Text(
                   _userId,
-                  style: const TextStyle(
-                      fontSize: 32, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -126,21 +133,14 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    OutlinedButton(
-                      onPressed: () {},
-                      child: const Text('프로필 편집'),
-                    ),
+                    OutlinedButton(onPressed: () {}, child: const Text('프로필 편집')),
                     const SizedBox(width: 12),
-                    OutlinedButton(
-                      onPressed: () {},
-                      child: const Icon(Icons.more_horiz),
-                    ),
+                    OutlinedButton(onPressed: () {}, child: const Icon(Icons.more_horiz)),
                   ],
                 ),
                 const SizedBox(height: 16),
               ],
             ),
-            // 탭바
             TabBar(
               controller: _tabController,
               indicatorColor: Colors.black,
@@ -153,7 +153,6 @@ class _MyPageScreenState extends State<MyPageScreen> with SingleTickerProviderSt
                 Tab(text: '좋아요'),
               ],
             ),
-            // 탭 뷰
             SizedBox(
               height: 400,
               child: TabBarView(

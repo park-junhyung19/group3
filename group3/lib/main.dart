@@ -13,8 +13,9 @@ import 'setting/confirm_password.dart';
 import 'pages/inquiry_form.dart';
 import 'pages/inquiry_list.dart';
 import 'pages/chat.dart';
-import 'pages/post_form.dart'; // ✅ 글쓰기 화면
-import 'pages/post_show.dart'; // ✅ 글 목록 화면 (새로 추가)
+import 'pages/post_form.dart';   // ✅ 글쓰기 화면
+import 'pages/post_show.dart';  // ✅ 글 목록 화면
+import 'pages/shorts_page.dart'; // ✅ 숏폼 페이지 추가 (이 줄만 새로 추가)
 
 // 관리자 페이지
 import 'pages/admin_dashboard_page.dart';
@@ -58,8 +59,9 @@ class MyApp extends StatelessWidget {
         '/inquiry_form':    (context) => const InquiryFormScreen(),
         '/inquiry_list':    (context) => const InquiryListScreen(),
         '/chat':            (context) => ChatListScreen(),
-        '/posts/new':       (context) => const PostFormScreen(),   // 글쓰기
-        '/posts': (context) =>  PostShowPage(), // ← 이름 맞춤
+        '/posts/new':       (context) => const PostFormScreen(),
+        '/posts':           (context) => PostShowPage(),
+        '/shorts':          (context) => const ShortsPage(), // ✅ 숏폼 페이지 라우트 등록
 
         // 관리자
         '/admin/login':        (context) => AdminLoginPage(),
