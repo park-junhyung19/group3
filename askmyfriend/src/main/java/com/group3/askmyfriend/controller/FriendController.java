@@ -58,6 +58,7 @@ public class FriendController {
                     isFollowing = followRepository.existsByFollowerAndFollowing(currentUser, friendUser);
                 }
             }
+            model.addAttribute("currentUser", currentUser);
 
             // 3) 공개 범위 체크
             boolean isPrivate = "private".equalsIgnoreCase(friendUser.getPrivacy());

@@ -429,4 +429,23 @@ public class PostRestController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Media post uploaded");
     }
+    
+    @GetMapping("/shorts")
+    public ResponseEntity<List<Map<String, Object>>> getShortFormPosts() {
+        List<PostEntity> shorts = postRepository.findByShortFormTrue();
+
+        List<Map<String, Object>> result = shorts.stream().map(post -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", post.getId());
+            map.put("videoPath", post.getVideoPath());
+            map.put("content", post.getContent());
+            map.put("likeCount", post.getLikeCount());
+            map.put("authorNickname", post.getAuthor() != null ? post.getAuthor().getNickname() : "");
+            map.put("authorProfileImg", post.getAuthor() != null ? post.getAuthor().getProfileImg() : null);
+            return map;
+        }).toList();
+
+        return ResponseEntity.ok(result);
+    }
+
 }

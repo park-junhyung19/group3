@@ -154,6 +154,41 @@
             color: #657786;
             padding: 40px 20px;
         }
+        /* === 이미지 갤러리 가로 스크롤용 === */
+.image-gallery {
+  display: flex;
+  overflow-x: auto;      /* 가로 스크롤 활성화 */
+  gap: 12px;             /* 이미지 간격 */
+  margin-top: 15px;      /* 콘텐츠와 간격 */
+  padding-bottom: 4px;   /* 스크롤바 위 여유 */
+}
+
+.image-gallery img {
+  flex: 0 0 100%;        /* 컨테이너 폭만큼 넓이 고정 */
+  width: 100%;           /* 컨테이너 폭에 딱 맞춤 */
+  height: auto;          /* 비율 유지 */
+  border-radius: 8px;    
+}
+        
+        /* — lightbox 모달 스타일 — */
+.image-modal {
+  display: none;              /* 기본 숨김 */
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.8);
+  justify-content: center;    /* 가로 중앙 정렬 */
+  align-items: center;        /* 세로 중앙 정렬 */
+  z-index: 9999;
+}
+.image-modal img {
+  max-width: 90%;             /* 화면에 꽉 차지 않도록 여백 유지 */
+  max-height: 90%;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  cursor: zoom-out;
+}
+        
     </style>
 </head>
 <body>
@@ -181,9 +216,15 @@
             <p th:text="${post.content}">게시물 내용</p>
             
             <!-- 이미지가 있는 경우 표시 -->
-            <div th:if="${post.imagePath != null and post.imagePath != ''}" class="post-image">
-                <img th:src="@{${post.imagePath}}" alt="게시물 이미지">
-            </div>
+           <!-- 이미지가 한 개 이상 있을 때 -->
+<div th:if="${post.imagePath}" class="image-gallery">
+  <div th:each="imgUrl : ${post.imagePath.split(';')}">
+    <div th:if="${imgUrl}">
+      <img th:src="@{${imgUrl}}" alt="게시물 이미지">
+    </div>
+  </div>
+</div>
+
             
             <!-- 비디오가 있는 경우 표시 -->
             <div th:if="${post.videoPath != null and post.videoPath != ''}" class="post-video">
@@ -225,7 +266,9 @@
             <div class="comments-list">
                 <div th:each="comment : ${post.comments}" class="comment-item">
                     <div class="comment-author">
-                        <img src="/img/profile_default.jpg" alt="프로필" class="comment-avatar">
+<img th:src="${comment.authorProfileImg != null ? comment.authorProfileImg : '/img/profile_default.jpg'}"
+     alt="프로필"
+     class="comment-avatar">
                         <span class="comment-author-name" th:text="${comment.author}">댓글 작성자</span>
                         <span class="comment-date" th:text="${#temporals.format(comment.createdAt, 'MM-dd HH:mm')}">날짜</span>
                     </div>
@@ -240,7 +283,9 @@
         </div>
     </div>
 </div>
-
+<div id="imageModal" class="image-modal">
+  <img id="modalImg" src="" alt="확대 이미지">
+</div>
 <script>
 // ⭐️ 이벤트 중복 바인딩 방지
 $(document).ready(function() {
@@ -338,6 +383,23 @@ function fallbackCopyText(text) {
     
     document.body.removeChild(textArea);
 }
+
+//1) 모든 갤러리 이미지를 클릭 가능하게
+document.querySelectorAll('.image-gallery img').forEach(img => {
+  img.style.cursor = 'zoom-in';
+  img.addEventListener('click', () => {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImg');
+    modalImg.src = img.src;    // 클릭된 이미지 원본 URL
+    modal.style.display = 'flex';
+  });
+});
+
+// 2) 모달 클릭 시 닫기
+document.getElementById('imageModal').addEventListener('click', () => {
+  document.getElementById('imageModal').style.display = 'none';
+});
+
 </script>
 </body>
 </html>

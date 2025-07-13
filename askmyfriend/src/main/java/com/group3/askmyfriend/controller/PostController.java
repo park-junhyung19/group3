@@ -100,8 +100,12 @@ public class PostController {
                         commentDto.setCreatedAt(comment.getCreatedAt());
                         if (comment.getAuthor() != null) {
                             commentDto.setAuthor(comment.getAuthor().getNickname());
+                            commentDto.setAuthorProfileImg(comment.getAuthor().getProfileImg());
+
                         } else {
                             commentDto.setAuthor("익명");
+                            commentDto.setAuthorProfileImg("/img/profile_default.jpg");
+
                         }
                         return commentDto;
                     })
@@ -231,8 +235,12 @@ public class PostController {
                                 commentDto.setCreatedAt(comment.getCreatedAt());
                                 if (comment.getAuthor() != null) {
                                     commentDto.setAuthor(comment.getAuthor().getNickname());
+                                    commentDto.setAuthorProfileImg(comment.getAuthor().getProfileImg());
+
                                 } else {
                                     commentDto.setAuthor("익명");
+                                    commentDto.setAuthorProfileImg("/img/profile_default.jpg");
+
                                 }
                                 return commentDto;
                             })
@@ -328,8 +336,12 @@ public class PostController {
                                 commentDto.setCreatedAt(comment.getCreatedAt());
                                 if (comment.getAuthor() != null) {
                                     commentDto.setAuthor(comment.getAuthor().getNickname());
+                                    commentDto.setAuthorProfileImg(comment.getAuthor().getProfileImg());
+
                                 } else {
                                     commentDto.setAuthor("익명");
+                                    commentDto.setAuthorProfileImg("/img/profile_default.jpg");
+
                                 }
                                 return commentDto;
                             })

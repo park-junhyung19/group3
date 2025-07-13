@@ -56,6 +56,32 @@
       position: relative;
       z-index: 200;
     }
+    
+    .image-gallery {
+  display: flex;
+  overflow-x: auto;       /* ← 가로 스크롤 활성화 */
+  white-space: nowrap;     /* ← 줄 바꿈 방지 */
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 4px;     /* 스크롤바 위 여유 */
+}
+/* 스크롤바 색상 (선택) */
+.image-gallery::-webkit-scrollbar {
+  height: 6px;
+}
+.image-gallery::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+/* 이미지 크기 고정 */
+.image-gallery img {
+  flex: 0 0 auto;
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+    
   </style>
 </head>
 <body>
@@ -132,7 +158,6 @@
 	    <div class="tab-menu">
 	        <button class="active" onclick="showTab('posts', this)">게시물</button>
 	        <button onclick="showTab('media', this)">미디어</button>
-	        <button onclick="showTab('likes', this)">마음에 들어요</button>
 	    </div>
 	    
 	    <!-- 탭별 내용 -->
@@ -142,10 +167,15 @@
 	            <div th:each="post : ${posts}" class="post-item">
 	                <a th:href="@{/posts/{postId}(postId=${post.id})}" style="text-decoration:none;">
 	                    <!-- 이미지가 있는 경우 표시 -->
-	                    <div th:if="${post.imagePath != null and post.imagePath != ''}">
-	                        <img th:src="@{${post.imagePath}}" alt="게시물 이미지" 
-	                             style="width:100%; max-width:400px; height:auto; border-radius:8px; margin-bottom:12px;">
-	                    </div>
+  <!-- 가로 스크롤 갤러리 -->
+ <div class="image-gallery" th:if="${post.imagePath}">
+  <div th:each="imgUrl : ${post.imagePath.split(';')}">
+    <div th:if="${imgUrl}">
+      <img th:src="@{${imgUrl}}" alt="게시물 이미지">
+    </div>
+  </div>
+   </div>
+
 	                    
 	                    <h4 th:text="${post.content}">게시물 내용</h4>
 	                    <p th:text="${post.content}">게시물 내용</p>
@@ -158,16 +188,17 @@
 	            </div>
 	        </div>
 	        
-	        <!-- 미디어 탭 -->
-	        <div id="media" class="tab-pane" style="display:none;">
-	            <div class="media-grid">
-	                <div th:each="media : ${mediaList}" class="media-item">
-	                    <a th:href="@{/posts/{postId}(postId=${media.id})}">
-	                        <img th:src="@{${media.imagePath}}" alt="미디어" 
-	                             style="width:120px; height:120px; object-fit:cover; margin:5px; cursor:pointer; border-radius:8px;">
-	                    </a>
-	                </div>
-	            </div>
+ <div class="image-gallery" th:if="${mediaList}">
+  <div th:each="media : ${mediaList}">
+    <a th:href="@{/posts/{postId}(postId=${media.id})}">
+      <!-- split한 배열의 0번 요소만 -->
+      <img th:src="@{${media.imagePath.split(';')[0]}}"
+           alt="미디어"
+           style="width:120px; height:120px; object-fit:cover; margin:5px; cursor:pointer; border-radius:8px;"/>
+    </a>
+  </div>
+</div>
+
 	            <div th:if="${mediaList == null or #lists.isEmpty(mediaList)}">업로드한 미디어가 없습니다.</div>
 	        </div>
 	        

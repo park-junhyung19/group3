@@ -393,6 +393,21 @@
 	        max-width: 400px;
 	      }
 	    }
+	    
+	    .image-gallery {
+  display: flex;
+  overflow-x: auto;
+  gap: 12px;
+  margin: 16px 0;
+  padding-bottom: 4px;
+}
+.image-gallery img {
+  flex: 0 0 auto;
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
 	  </style>
 	</head>
 	<body>
@@ -486,8 +501,10 @@
 	          <i class="fas fa-flag"></i>
 	        </button>
 	        
-	        <div class="author-info" th:if="${post.authorNickname != null}">
-	          <div class="avatar" th:if="${post.authorProfileImg != null}">
+ <!-- 변경: /friend-management/profile/{username} -->
+<a th:href="@{/friend-management/profile/user/{userId}(userId=${post.authorId})}"
+   style="text-decoration:none; color:inherit;">  <div class="author-info" th:if="${post.authorNickname != null}">
+  	          <div class="avatar" th:if="${post.authorProfileImg != null}">
 	            <img th:src="@{${post.authorProfileImg}}" alt="프로필"/>
 	          </div>
 	          <div class="avatar" th:if="${post.authorProfileImg == null}"
@@ -501,16 +518,21 @@
 	            </div>
 	          </div>
 	        </div>
-	
-	        <div class="post-content" th:text="${post.content}">게시글 내용</div>
-	
-	        <div th:if="${post.imagePath != null}">
-  <img th:each="imgPath : ${#strings.arraySplit(post.imagePath, ';')}"
-       th:src="@{${imgPath}}"
-       alt="게시글 이미지"
-       class="post-image"/>
-</div>
-	
+	</a>
+ <!-- 본문·이미지 클릭 시 상세로 → 한 번만 감싸기 -->
+ <a th:href="@{/posts/{id}(id=${post.id})}"
+    style="display:block; text-decoration:none; color:inherit;">
+   <div class="post-content" th:text="${post.content}">게시글 내용</div>
+   <div th:if="${post.imagePath != null}" class="image-gallery">
+     <img th:each="imgPath : ${#strings.arraySplit(post.imagePath, ';')}"
+          th:if="${imgPath != ''}"
+          th:src="@{${imgPath}}"
+          alt="게시글 이미지"/>
+   </div>
+ </a>
+
+
+
 	        <div th:if="${post.videoPath != null}">
 	          <video width="100%" controls style="border-radius:12px;margin-bottom:16px;">
 	            <source th:src="@{${post.videoPath}}" type="video/mp4"/>
@@ -678,93 +700,59 @@
 	    });
 	
 	    // 개선된 좋아요 토글 함수
-	    function toggleLike(button) {
-	      // 중복 클릭 방지
-	      if (button.disabled) return;
-	      
-	      const postId = button.getAttribute('data-post-id');
-	      const email = button.getAttribute('data-user-email');
-	      
-	      if (!email) { 
-	        alert('로그인이 필요합니다.'); 
-	        return; 
-	      }
-	      
-	      // 버튼 비활성화 및 로딩 표시
-	      button.disabled = true;
-	      button.classList.add('loading');
-	      
-	      // 현재 상태 저장 (롤백용)
-	      const wasLiked = button.classList.contains('liked');
-	      const currentCount = parseInt(document.getElementById(`like-count-${postId}`).innerText);
-	      
-	      // 낙관적 업데이트 (즉시 UI 변경)
-	      button.classList.toggle('liked');
-	      const icon = button.querySelector('i');
-	      icon.className = button.classList.contains('liked') ? 'fas fa-heart' : 'far fa-heart';
-	      document.getElementById(`like-count-${postId}`).innerText = wasLiked ? currentCount - 1 : currentCount + 1;
-	      
-	      // 서버 요청
-	      fetch(`/likes/${postId}?userEmail=${encodeURIComponent(email)}`, { 
-	        method: 'POST',
-	        headers: {
-	          'Content-Type': 'application/json'
-	        }
-	      })
-	      .then(res => {
-	        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-	        return res.json();
-	      })
-	      .then(data => {
-	        // 서버 응답이 단순 카운트인지 객체인지 확인
-	        let count, isLiked;
-	        
-	        if (typeof data === 'number') {
-	          // 기존 방식: 단순 카운트만 반환
-	          count = data;
-	          isLiked = button.classList.contains('liked');
-	        } else {
-	          // 개선된 방식: 카운트와 좋아요 상태 함께 반환
-	          count = data.count;
-	          isLiked = data.isLiked;
-	          
-	          // 서버 상태에 따라 UI 재조정
-	          if (isLiked) {
-	            button.classList.add('liked');
-	            icon.className = 'fas fa-heart';
-	          } else {
-	            button.classList.remove('liked');
-	            icon.className = 'far fa-heart';
-	          }
-	        }
-	        
-	        // 서버에서 받은 정확한 카운트로 업데이트
-	        document.getElementById(`like-count-${postId}`).innerText = count;
-	        
-	        // 로컬스토리지 업데이트
-	        localStorage.setItem(`like_${email}_${postId}`, isLiked);
-	      })
-	      .catch(err => {
-	        console.error('좋아요 처리 오류:', err);
-	        
-	        // 실패 시 원래 상태로 롤백
-	        if (wasLiked) {
-	          button.classList.add('liked');
-	          icon.className = 'fas fa-heart';
-	        } else {
-	          button.classList.remove('liked');
-	          icon.className = 'far fa-heart';
-	        }
-	        document.getElementById(`like-count-${postId}`).innerText = currentCount;
-	        
-	        alert('좋아요 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
-	      })
-	      .finally(() => {
-	        // 버튼 재활성화 및 로딩 제거
-	        button.disabled = false;
-	        button.classList.remove('loading');
-	      });
-	    }
+  function toggleLike(button) {
+	  const icon = button.querySelector('i');
+
+  const postId = button.getAttribute('data-post-id');
+  const email  = button.getAttribute('data-user-email');
+  if (!email) { alert('로그인이 필요합니다.'); return; }
+
+  const wasLiked   = button.classList.contains('liked');
+  const isLiked    = !wasLiked;
+  const countEl    = document.getElementById(`like-count-${postId}`);
+  const currentCnt = parseInt(countEl.innerText, 10);
+  if (button.disabled) return;
+
+  // Optimistic UI
+  button.disabled   = true;
+  button.classList.add('loading');
+  button.classList.toggle('liked', isLiked);
+  icon.classList.toggle('far', !isLiked);
+  icon.classList.toggle('fas',  isLiked);
+  countEl.innerText = isLiked ? currentCnt + 1 : currentCnt - 1;
+
+  fetch(`/posts/${postId}/like?userEmail=${encodeURIComponent(email)}`, {
+    method: 'POST'
+  })
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();     // ← JSON으로 파싱
+  })
+  .then(data => {
+    // JSON 응답에서 실제 카운트를 꺼내 씁니다.
+    // PostController 쪽에서 {"likeCount":123, ...} 형태로 반환한다고 가정
+    const newCount = data.likeCount ?? data.count ?? currentCnt;
+    countEl.innerText = newCount;
+
+    // 로컬스토리지에 최종 상태 저장 (필요시)
+    localStorage.setItem(`like_${email}_${postId}`, isLiked);
+  })
+  .catch(err => {
+    console.error('좋아요 처리 오류:', err);
+    // 롤백
+    button.classList.toggle('liked', wasLiked);
+    icon.classList.toggle('far', wasLiked);
+    icon.classList.toggle('fas', !wasLiked);
+    countEl.innerText = currentCnt;
+    alert('좋아요 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+  })
+  .finally(() => {
+    button.disabled      = false;
+    button.classList.remove('loading');
+  });
+}
+
+
 	
 	    // 댓글 토글
 	    function toggleComments(btn) {
@@ -887,4 +875,4 @@
 	  
 	  
 	</body>
-	</html>
+	</html>  

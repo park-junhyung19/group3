@@ -9,6 +9,8 @@ public class CommentDto {
     private String author; // 추가됨
     private String content;
     private LocalDateTime createdAt;
+    // 🔥 새로 추가
+    private String authorProfileImg;
 
     // 기본 생성자
     public CommentDto() {}
@@ -62,4 +64,14 @@ public class CommentDto {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+    
+    // 🔥 authorProfileImg getter/setter 추가
+    public String getAuthorProfileImg() {
+        return authorProfileImg;
+    }
+
+    public void setAuthorProfileImg(String authorProfileImg) {
+        this.authorProfileImg = authorProfileImg;
+    }
 }
+
